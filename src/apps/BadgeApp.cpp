@@ -11,6 +11,7 @@ void BadgeApp::setup(AppManager* appManager, IApp* mainMenuApp) {
 
 void BadgeApp::onEnter() {
     Serial.println("[BadgeApp] enter");
+    _needsRender = true;
 }
 
 void BadgeApp::onExit() {
@@ -25,13 +26,31 @@ void BadgeApp::handleButton(const ButtonEvent& event) {
     }
 }
 
-void BadgeApp::update() {}
+void BadgeApp::update() {
+}
 
 void BadgeApp::render(DisplayManager& display) {
-    display.clear();
-    display.drawText(0, 10, "Stealthy");
-    display.drawText(0, 30, "Name: Your Name");
-    display.drawText(0, 50, "Status: Online");
-    display.drawText(0, 80, "Press Select");
-    display.updateFull();
+    if (!_needsRender) {
+        return;
+    }
+
+    display.startFullWindowDraw();
+    do {
+        display.fillWhite();
+
+        display.setTitleFont();
+        display.setTextBlack();
+        display.drawText(10, 25, "Stealthy");
+
+        display.setDefaultFont();
+        display.drawText(10, 55, "Name:");
+        display.drawText(60, 55, _name);
+
+        display.drawText(10, 75, "Status:");
+        display.drawText(60, 75, _status);
+
+        display.drawText(10, 105, "Press Select");
+    } while (display.nextPage());
+
+    _needsRender = false;
 }

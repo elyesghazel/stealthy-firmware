@@ -1,9 +1,13 @@
 #pragma once
 #include "core/IApp.h"
-#include <WString.h>
 
 class AppManager;
 class IApp;
+
+enum class MenuRenderMode {
+    Full,
+    Partial
+};
 
 class MainMenuApp : public IApp {
 public:
@@ -22,7 +26,7 @@ private:
     IApp* _badgeApp = nullptr;
 
     static const int ITEM_COUNT = 4;
-    String _items[ITEM_COUNT] = {
+    const char* _items[ITEM_COUNT] = {
         "WiFi Tools",
         "BLE Tools",
         "IR Tools",
@@ -30,4 +34,8 @@ private:
     };
 
     int _selectedIndex = 0;
+    int _previousSelectedIndex = 0;
+    bool _needsRender = true;
+    int _partialUpdateCount = 0;
+    MenuRenderMode _renderMode = MenuRenderMode::Full;
 };

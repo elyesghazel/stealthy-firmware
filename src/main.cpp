@@ -13,20 +13,22 @@ static const int PIN_BTN_DOWN = 11;
 static const int PIN_BTN_SELECT = 12;
 static const int PIN_BTN_BACK = 13;
 
+static const int LED_BLUE = 2;
+static const int LED_GREEN = 1;
 
 DisplayManager displayManager;
 PowerManager powerManager;
 AppManager appManager;
 ButtonManager buttonManager(PIN_BTN_UP, PIN_BTN_DOWN, PIN_BTN_SELECT, PIN_BTN_BACK);
 
-// Forward-declare with pointers first is hard.
-// Easiest beginner trick: create app pointers and assign after construction.
-
 BadgeApp badgeApp;
 MainMenuApp mainMenuApp;
 
 void setup() {
     Serial.begin(115200);
+
+    pinMode(LED_BLUE, OUTPUT);
+    pinMode(LED_GREEN, OUTPUT);
 
     displayManager.begin();
     buttonManager.begin();

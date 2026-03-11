@@ -1,4 +1,5 @@
 #include "DisplayManager.h"
+#include <SPI.h>
 #include <GxEPD2_BW.h>
 #include <Fonts/FreeMonoBold9pt7b.h>
 
@@ -9,51 +10,75 @@
 #define EPD_RST  15
 #define EPD_BUSY 16
 
-#define displayRotation 3
+#define DISPLAY_ROTATION 3
 
 GxEPD2_BW<GxEPD2_213_B74, GxEPD2_213_B74::HEIGHT> display(
-  GxEPD2_213_B74(EPD_CS, EPD_DC, EPD_RST, EPD_BUSY)
+    GxEPD2_213_B74(EPD_CS, EPD_DC, EPD_RST, EPD_BUSY)
 );
 
 void DisplayManager::begin() {
-    // Initialize the display here
-    
+    SPI.begin(EPD_SCK, -1, EPD_MOSI, EPD_CS);
+
     display.init(115200, true, 2, false);
-    display.setRotation(displayRotation);
-    display.setFont(&FreeMonoBold9pt7b);
+    display.setRotation(DISPLAY_ROTATION);
+    display.setTextColor(GxEPD_BLACK);
+
     Serial.println("[DisplayManager] Initialized");
 }
 
-void DisplayManager::clear() {
-    display.clearScreen();
-    display.fillScreen(GxEPD_WHITE);
+void DisplayManager::startFullWindowDraw() {
+    display.setFullWindow();
+    display.firstPage();
+}
 
-    Serial.println("[DisplayManager] Screen cleared");
+void DisplayManager::startPartialWindowDraw(int x, int y, int w, int h) {
+    display.setPartialWindow(x, y, w, h);
+    display.firstPage();
+}
+
+bool DisplayManager::nextPage() {
+    return display.nextPage();
+}
+
+void DisplayManager::fillWhite() {
+    display.fillScreen(GxEPD_WHITE);
+}
+
+void DisplayManager::fillRectWhite(int x, int y, int w, int h) {
+    display.fillRect(x, y, w, h, GxEPD_WHITE);
+}
+
+void DisplayManager::setDefaultFont() {
+    display.setFont();
+}
+
+void DisplayManager::setTitleFont() {
+    display.setFont(&FreeMonoBold9pt7b);
+}
+
+void DisplayManager::setTextBlack() {
+    display.setTextColor(GxEPD_BLACK);
+}
+
+void DisplayManager::setTextWhite() {
+    display.setTextColor(GxEPD_WHITE);
+}
+
+void DisplayManager::drawText(int x, int y, const char* text) {
+    display.setCursor(x, y);
+    display.print(text);
 }
 
 void DisplayManager::drawText(int x, int y, const String& text) {
     display.setCursor(x, y);
-    display.println(text);
-    Serial.printf("[Display] text (%d,%d): %s\n", x, y, text.c_str());
+    display.print(text);
+}
+
+void DisplayManager::fillRect(int x, int y, int w, int h) {
+    display.fillRect(x, y, w, h, GxEPD_BLACK);
 }
 
 
-void DisplayManager::drawMenu(const String items[], int count, int selectedIndex) {
-    for (int i = 0; i < count; i++) {
-        String prefix = (i == selectedIndex) ? "> " : "  ";
-        drawText(0, 20 + i * 12, prefix + items[i]);
-    }
-}
-
-void DisplayManager::updateFull() {
-    // Full refresh call here
-    display.refresh();
-    Serial.println("[Display] full refresh");
-}
-
-void DisplayManager::updatePartial() {
-    // Partial refresh call here
-    display.setPartialWindow(0, 0, display.width(), display.height());
-    display.refresh(true);
-    Serial.println("[Display] partial refresh");
+void DisplayManager::getTextBounds(const char* text, int x, int y, int16_t* x1, int16_t* y1, uint16_t* w, uint16_t* h) {
+    display.getTextBounds(text, x, y, x1, y1, w, h);
 }

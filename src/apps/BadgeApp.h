@@ -19,4 +19,9 @@ public:
 private:
     AppManager* _appManager = nullptr;
     IApp* _mainMenuApp = nullptr;
+
+    bool _needsRender = true;
+
+    const char* _name = "Your Name";
+    const char* _status = "Online";
 };
