@@ -82,3 +82,11 @@ void DisplayManager::fillRect(int x, int y, int w, int h) {
 void DisplayManager::getTextBounds(const char* text, int x, int y, int16_t* x1, int16_t* y1, uint16_t* w, uint16_t* h) {
     display.getTextBounds(text, x, y, x1, y1, w, h);
 }
+
+int DisplayManager::width() const {
+    return display.width();
+}
+
+int DisplayManager::height() const {
+    return display.height();
+}

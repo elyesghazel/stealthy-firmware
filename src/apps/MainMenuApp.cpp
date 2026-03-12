@@ -2,6 +2,19 @@
 #include "core/AppManager.h"
 #include "drivers/DisplayManager.h"
 
+namespace {
+    constexpr int TITLE_X = 28;
+    constexpr int TITLE_Y = 24;
+
+    constexpr int MENU_TEXT_X = 100;
+    constexpr int MENU_CARET_X = MENU_TEXT_X - 20;
+
+    constexpr int FIRST_ROW_Y = 50;
+    constexpr int ROW_SPACING = 22;
+    constexpr int ROW_HEIGHT = 22;
+
+}
+
 MainMenuApp::MainMenuApp() {}
 
 void MainMenuApp::setup(AppManager* appManager, IApp* badgeApp) {
@@ -9,14 +22,12 @@ void MainMenuApp::setup(AppManager* appManager, IApp* badgeApp) {
     _badgeApp = badgeApp;
 }
 
-
 void MainMenuApp::onEnter() {
     Serial.println("[MainMenuApp] enter");
     _selectedIndex = 0;
     _previousSelectedIndex = 0;
-    _needsRender = true;
     _partialUpdateCount = 0;
-    _renderMode = MenuRenderMode::Full;
+    requestFullRender();
 }
 
 void MainMenuApp::onExit() {
@@ -30,21 +41,11 @@ void MainMenuApp::handleButton(const ButtonEvent& event) {
 
     switch (event.id) {
         case ButtonId::Up:
-            if (_selectedIndex > 0) {
-                _previousSelectedIndex = _selectedIndex;
-                _selectedIndex--;
-                _needsRender = true;
-                _renderMode = MenuRenderMode::Partial;
-            }
+            moveSelectionUp();
             break;
 
         case ButtonId::Down:
-            if (_selectedIndex < ITEM_COUNT - 1) {
-                _previousSelectedIndex = _selectedIndex;
-                _selectedIndex++;
-                _needsRender = true;
-                _renderMode = MenuRenderMode::Partial;
-            }
+            moveSelectionDown();
             break;
 
         case ButtonId::Back:
@@ -67,80 +68,127 @@ void MainMenuApp::render(DisplayManager& display) {
         return;
     }
 
-    _partialUpdateCount++;
-    if (_partialUpdateCount >= 10) {
-        _renderMode = MenuRenderMode::Full;
-        _needsRender = true;
-        _partialUpdateCount = 0;
-    }
-
     if (_renderMode == MenuRenderMode::Full) {
-        display.startFullWindowDraw();
-        do {
-            display.fillWhite();
-
-            display.setTitleFont();
-            display.setTextBlack();
-            display.drawText(10, 20, "Main Menu");
-
-            display.setDefaultFont();
-
-            for (int i = 0; i < ITEM_COUNT; i++) {
-                int y = 45 + i * 18;
-
-                int16_t x1, y1;
-                uint16_t w, h;
-                display.getTextBounds(_items[i], 10, y, &x1, &y1, &w, &h);
-
-                if (i == _selectedIndex) {
-                    display.fillRect(x1 - 4, y1 - 2, w + 8, h + 4);
-                    display.setTextWhite();
-                    display.drawText(10, y, _items[i]);
-                    display.setTextBlack();
-                } else {
-                    display.drawText(10, y, _items[i]);
-                }
-            }
-        } while (display.nextPage());
-
-        Serial.println("[MainMenuApp] full render");
+        renderFull(display);
     } else {
-        int oldY = 45 + _previousSelectedIndex * 18;
-        int newY = 45 + _selectedIndex * 18;
-
-        int16_t oldX1, oldY1, newX1, newY1;
-        uint16_t oldW, oldH, newW, newH;
-
-        display.setDefaultFont();
-        display.getTextBounds(_items[_previousSelectedIndex], 10, oldY, &oldX1, &oldY1, &oldW, &oldH);
-        display.getTextBounds(_items[_selectedIndex], 10, newY, &newX1, &newY1, &newW, &newH);
-
-        int left = min(oldX1, newX1) - 4;
-        int top = min(oldY1, newY1) - 2;
-        int right = max(oldX1 + (int)oldW, newX1 + (int)newW) + 4;
-        int bottom = max(oldY1 + (int)oldH, newY1 + (int)newH) + 2;
-
-        int width = right - left;
-        int height = bottom - top;
-
-        display.startPartialWindowDraw(left, top, width, height);
-        do {
-            display.fillRectWhite(left, top, width, height);
-
-            display.setDefaultFont();
-
-            display.setTextBlack();
-            display.drawText(10, oldY, _items[_previousSelectedIndex]);
-
-            display.getTextBounds(_items[_selectedIndex], 10, newY, &newX1, &newY1, &newW, &newH);
-            display.fillRect(newX1 - 4, newY1 - 2, newW + 8, newH + 4);
-            display.setTextWhite();
-            display.drawText(10, newY, _items[_selectedIndex]);
-            display.setTextBlack();
-        } while (display.nextPage());
-
-        Serial.println("[MainMenuApp] partial render");
+        renderPartial(display);
     }
 
     _needsRender = false;
+}
+
+void MainMenuApp::moveSelectionUp() {
+    if (_selectedIndex <= 0) {
+        return;
+    }
+
+    _selectedIndex--;
+
+    _partialUpdateCount++;
+    if (_partialUpdateCount >= 25) {
+        _partialUpdateCount = 0;
+        requestFullRender();
+    } else {
+        requestPartialRender();
+    }
+}
+
+void MainMenuApp::moveSelectionDown() {
+    if (_selectedIndex >= ITEM_COUNT - 1) {
+        return;
+    }
+
+    _selectedIndex++;
+
+    _partialUpdateCount++;
+    if (_partialUpdateCount >= 25) {
+        _partialUpdateCount = 0;
+        requestFullRender();
+    } else {
+        requestPartialRender();
+    }
+}
+
+void MainMenuApp::requestFullRender() {
+    _renderMode = MenuRenderMode::Full;
+    _needsRender = true;
+}
+
+void MainMenuApp::requestPartialRender() {
+    _renderMode = MenuRenderMode::Partial;
+    _needsRender = true;
+}
+
+int MainMenuApp::rowBaselineY(int index) const {
+    return FIRST_ROW_Y + index * ROW_SPACING;
+}
+
+int MainMenuApp::rowTopY(int index) const {
+    return rowBaselineY(index) - 15;
+}
+
+void MainMenuApp::drawRow(DisplayManager& display, int index, bool selected) {
+    const int y = rowBaselineY(index);
+
+    display.setTextBlack();
+
+    if (selected) {
+        display.drawText(MENU_CARET_X, y, ">");
+    } else {
+        display.drawText(MENU_CARET_X, y, " ");
+    }
+
+    display.drawText(MENU_TEXT_X, y, _items[index]);
+}
+
+void MainMenuApp::renderFull(DisplayManager& display) {
+    display.startFullWindowDraw();
+    do {
+        display.fillWhite();
+
+        display.setTitleFont();
+        display.setTextBlack();
+        display.drawText(TITLE_X, TITLE_Y, "Main Menu");
+
+        display.setDefaultFont();
+        for (int i = 0; i < ITEM_COUNT; i++) {
+            drawRow(display, i, i == _selectedIndex);
+        }
+    } while (display.nextPage());
+
+    Serial.println("[MainMenuApp] full render");
+}
+
+void MainMenuApp::renderPartial(DisplayManager& display) {
+    const int menuTop = rowTopY(0);
+    const int menuBottom = rowTopY(ITEM_COUNT - 1) + ROW_HEIGHT;
+    int height = menuBottom - menuTop;
+
+    int x = 0;
+    int w = display.width();
+
+    if (x % 8 != 0) {
+        x = (x / 8) * 8;
+    }
+    w = ((w + 7) / 8) * 8;
+
+    int top = menuTop;
+    if (top < 0) top = 0;
+    if (top % 2 != 0) top--;
+
+    if (height % 2 != 0) height++;
+
+    display.startPartialWindowDraw(x, top, w, height);
+    do {
+        display.fillRectWhite(x, top, w, height);
+
+        display.setDefaultFont();
+        display.setTextBlack();
+
+        for (int i = 0; i < ITEM_COUNT; i++) {
+            drawRow(display, i, i == _selectedIndex);
+        }
+    } while (display.nextPage());
+
+    Serial.println("[MainMenuApp] partial render");
 }

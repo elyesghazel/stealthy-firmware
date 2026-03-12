@@ -24,4 +24,6 @@ public:
     void fillRect(int x, int y, int w, int h);
 
     void getTextBounds(const char* text, int x, int y, int16_t* x1, int16_t* y1, uint16_t* w, uint16_t* h);
+    int width() const;
+    int height() const;
 };

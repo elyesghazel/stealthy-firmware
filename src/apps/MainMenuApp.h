@@ -3,6 +3,7 @@
 
 class AppManager;
 class IApp;
+class DisplayManager;
 
 enum class MenuRenderMode {
     Full,
@@ -22,10 +23,11 @@ public:
     void render(DisplayManager& display) override;
 
 private:
+    static const int ITEM_COUNT = 4;
+
     AppManager* _appManager = nullptr;
     IApp* _badgeApp = nullptr;
 
-    static const int ITEM_COUNT = 4;
     const char* _items[ITEM_COUNT] = {
         "WiFi Tools",
         "BLE Tools",
@@ -35,7 +37,21 @@ private:
 
     int _selectedIndex = 0;
     int _previousSelectedIndex = 0;
-    bool _needsRender = true;
     int _partialUpdateCount = 0;
+
+    bool _needsRender = true;
     MenuRenderMode _renderMode = MenuRenderMode::Full;
+
+    void moveSelectionUp();
+    void moveSelectionDown();
+
+    void requestFullRender();
+    void requestPartialRender();
+
+    void renderFull(DisplayManager& display);
+    void renderPartial(DisplayManager& display);
+
+    void drawRow(DisplayManager& display, int index, bool selected);
+    int rowBaselineY(int index) const;
+    int rowTopY(int index) const;
 };
