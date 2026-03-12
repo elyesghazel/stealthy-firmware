@@ -1,4 +1,6 @@
 #include "DisplayManager.h"
+#include "core/PowerManager.h"
+
 #include <SPI.h>
 #include <GxEPD2_BW.h>
 #include <Fonts/FreeMonoBold9pt7b.h>
@@ -23,7 +25,17 @@ void DisplayManager::begin() {
     display.setRotation(DISPLAY_ROTATION);
     display.setTextColor(GxEPD_BLACK);
 
+    display.setFullWindow();
+    display.firstPage();
+    do {
+        display.fillScreen(GxEPD_WHITE);
+    } while (display.nextPage());
+
     Serial.println("[DisplayManager] Initialized");
+}
+
+void DisplayManager::attachPowerManager(PowerManager* powerManager) {
+    _powerManager = powerManager;
 }
 
 void DisplayManager::startFullWindowDraw() {
@@ -78,6 +90,9 @@ void DisplayManager::fillRect(int x, int y, int w, int h) {
     display.fillRect(x, y, w, h, GxEPD_BLACK);
 }
 
+void DisplayManager::drawRect(int x, int y, int w, int h) {
+    display.drawRect(x, y, w, h, GxEPD_BLACK);
+}
 
 void DisplayManager::getTextBounds(const char* text, int x, int y, int16_t* x1, int16_t* y1, uint16_t* w, uint16_t* h) {
     display.getTextBounds(text, x, y, x1, y1, w, h);
@@ -89,4 +104,53 @@ int DisplayManager::width() const {
 
 int DisplayManager::height() const {
     return display.height();
+}
+
+int DisplayManager::batteryBarsFromVoltage(float voltage) const {
+    // tuned a bit more realistically for 1-cell Li-ion under light load
+    if (voltage >= 4.05f) return 4;
+    if (voltage >= 3.90f) return 3;
+    if (voltage >= 3.75f) return 2;
+    if (voltage >= 3.55f) return 1;
+    return 0;
+}
+
+void DisplayManager::drawBatteryIcon(int x, int y, float voltage) {
+    const int bodyW = 18;
+    const int bodyH = 9;
+    const int tipW = 2;
+    const int tipH = 4;
+
+    drawRect(x, y, bodyW, bodyH);
+    fillRect(x + bodyW, y + 2, tipW, tipH);
+
+    int bars = batteryBarsFromVoltage(voltage);
+
+    for (int i = 0; i < 4; i++) {
+        if (i < bars) {
+            fillRect(x + 2 + i * 4, y + 2, 3, 5);
+        }
+    }
+}
+
+void DisplayManager::drawStatusBar() {
+    setTextBlack();
+
+    // use the title font for the app name so it feels more deliberate
+    setTitleFont();
+    drawText(4, 14, "Stealthy");
+
+    float voltage = 0.0f;
+    if (_powerManager) {
+        voltage = _powerManager->readBatteryVoltage();
+    }
+
+    // battery icon only
+    drawBatteryIcon(width() - 24, 4, voltage);
+
+    // divider line
+    fillRect(0, 19, width(), 1);
+
+    // switch back to default for content afterwards
+    setDefaultFont();
 }

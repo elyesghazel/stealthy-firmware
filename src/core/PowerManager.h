@@ -9,10 +9,14 @@ public:
 
     bool shouldSleep() const;
     float readBatteryVoltage() const;
+    bool isUsbPowered() const;
     void enterDeepSleep();
 
 private:
     unsigned long _sleepTimeoutMs = 30000;
     unsigned long _lastActivityMs = 0;
     bool _shouldSleep = false;
+
+    mutable float _cachedBatteryVoltage = 3.7f;
+    mutable unsigned long _lastBatterySampleMs = 0;
 };

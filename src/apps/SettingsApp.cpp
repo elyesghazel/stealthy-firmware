@@ -3,18 +3,18 @@
 #include "drivers/DisplayManager.h"
 
 namespace {
-    constexpr int TITLE_X = 24;
-    constexpr int TITLE_Y = 22;
+    constexpr int TITLE_X = 5;
+    constexpr int TITLE_Y = 38;
 
     constexpr int CARET_X = 6;
     constexpr int LABEL_X = 18;
     constexpr int VALUE_X = 150;
 
-    constexpr int FIRST_ROW_Y = 50;
+    constexpr int FIRST_ROW_Y = 64;
     constexpr int ROW_SPACING = 18;
     constexpr int ROW_HEIGHT = 18;
 
-    constexpr int FOOTER_Y = 120;
+    constexpr int FOOTER_Y = 128;
 }
 
 SettingsApp::SettingsApp() {}
@@ -122,15 +122,14 @@ void SettingsApp::drawSettingsList(DisplayManager& display) {
         }
 
         display.drawText(LABEL_X, y, _items[i]);
-        
-        // selected item 
+
         if (i < ITEM_COUNT - 1) {
             drawValue(display, i, y);
         }
     }
 
     if (_mode == SettingsMode::Edit) {
-        display.drawText(18, FOOTER_Y, "EDIT: Up/Down");
+        display.drawText(18, FOOTER_Y, "EDIT: Up/Down, Back");
     } else {
         display.drawText(18, FOOTER_Y, "BROWSE: Select");
     }
@@ -140,6 +139,7 @@ void SettingsApp::renderFull(DisplayManager& display) {
     display.startFullWindowDraw();
     do {
         display.fillWhite();
+        display.drawStatusBar();
 
         display.setTitleFont();
         display.setTextBlack();

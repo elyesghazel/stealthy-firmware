@@ -46,10 +46,11 @@ void BadgeApp::render(DisplayManager& display) {
     display.startFullWindowDraw();
     do {
         display.fillWhite();
+        display.drawStatusBar();
 
         display.setTitleFont();
         display.setTextBlack();
-        display.drawText(10, 30, "Badge App");
+        display.drawText(4, 32, "Badge App");
 
         display.setDefaultFont();
         display.setTextBlack();

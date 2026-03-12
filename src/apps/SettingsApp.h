@@ -58,11 +58,10 @@ private:
     void requestFullRender();
     void requestPartialRender();
 
-    void drawValue(DisplayManager& display, int index, int y);
-
     void renderFull(DisplayManager& display);
     void renderPartial(DisplayManager& display);
     void drawSettingsList(DisplayManager& display);
+    void drawValue(DisplayManager& display, int index, int y);
 
     int rowBaselineY(int index) const;
     int rowTopY(int index) const;

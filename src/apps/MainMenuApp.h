@@ -14,7 +14,12 @@ class MainMenuApp : public IApp {
 public:
     MainMenuApp();
 
-    void setup(AppManager* appManager, IApp* badgeApp, IApp* aboutApp, IApp* settingsApp);
+    void setup(
+        AppManager* appManager,
+        IApp* badgeApp,
+        IApp* settingsApp,
+        IApp* aboutApp
+    );
 
     void onEnter() override;
     void onExit() override;
@@ -23,22 +28,24 @@ public:
     void render(DisplayManager& display) override;
 
 private:
-    static const int ITEM_COUNT = 4;
+    static const int ITEM_COUNT = 5;
+    static const int VISIBLE_ITEMS = 4;
 
     AppManager* _appManager = nullptr;
     IApp* _badgeApp = nullptr;
-    IApp* _aboutApp = nullptr;
     IApp* _settingsApp = nullptr;
+    IApp* _aboutApp = nullptr;
 
     const char* _items[ITEM_COUNT] = {
-        "Personal Badge",
-        "BLE Tools",
+        "Badge",
+        "Settings",
         "About",
-        "Settings"
+        "WiFi Tools",
+        "IR Tools"
     };
 
     int _selectedIndex = 0;
-    int _previousSelectedIndex = 0;
+    int _scrollOffset = 0;
     int _partialUpdateCount = 0;
 
     bool _needsRender = true;
@@ -46,6 +53,7 @@ private:
 
     void moveSelectionUp();
     void moveSelectionDown();
+    void clampScrollToSelection();
 
     void requestFullRender();
     void requestPartialRender();
@@ -53,7 +61,10 @@ private:
     void renderFull(DisplayManager& display);
     void renderPartial(DisplayManager& display);
 
-    void drawRow(DisplayManager& display, int index, bool selected);
-    int rowBaselineY(int index) const;
-    int rowTopY(int index) const;
+    void drawRow(DisplayManager& display, int visibleRow, int itemIndex, bool selected);
+    void drawMenuItems(DisplayManager& display);
+    void drawScrollIndicators(DisplayManager& display);
+
+    int rowBaselineY(int visibleRow) const;
+    int rowTopY(int visibleRow) const;
 };

@@ -47,20 +47,19 @@ void AboutApp::render(DisplayManager& display) {
 
     display.startFullWindowDraw();
     do {
-
-        const int16_t centerX = display.width() / 2;
         display.fillWhite();
+        display.drawStatusBar();
 
         display.setTitleFont();
         display.setTextBlack();
-        display.drawText(20, 22, AppInfo::PRODUCT_NAME);
+        display.drawText(20, 38, AppInfo::PRODUCT_NAME);
 
         display.setDefaultFont();
-        display.drawText(centerX - 20, 50, "About");
-        display.drawText(centerX - 20, 68, AppInfo::FW_VERSION);
-        display.drawText(centerX - 20, 84, AppInfo::HW_REVISION);
-        display.drawText(centerX - 20, 100, AppInfo::DESCRIPTION);
-        display.drawText(centerX - 20, 116, AppInfo::WEBSITE);
+        display.drawText(20, 62, "About");
+        display.drawText(20, 80, AppInfo::FW_VERSION);
+        display.drawText(20, 96, AppInfo::HW_REVISION);
+        display.drawText(20, 112, AppInfo::DESCRIPTION);
+        display.drawText(20, 128, AppInfo::WEBSITE);
     } while (display.nextPage());
 
     _needsRender = false;
