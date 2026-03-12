@@ -14,7 +14,7 @@ class MainMenuApp : public IApp {
 public:
     MainMenuApp();
 
-    void setup(AppManager* appManager, IApp* badgeApp);
+    void setup(AppManager* appManager, IApp* badgeApp, IApp* aboutApp, IApp* settingsApp);
 
     void onEnter() override;
     void onExit() override;
@@ -27,11 +27,13 @@ private:
 
     AppManager* _appManager = nullptr;
     IApp* _badgeApp = nullptr;
+    IApp* _aboutApp = nullptr;
+    IApp* _settingsApp = nullptr;
 
     const char* _items[ITEM_COUNT] = {
-        "WiFi Tools",
+        "Personal Badge",
         "BLE Tools",
-        "IR Tools",
+        "About",
         "Settings"
     };
 

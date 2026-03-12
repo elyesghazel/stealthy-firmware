@@ -17,9 +17,11 @@ namespace {
 
 MainMenuApp::MainMenuApp() {}
 
-void MainMenuApp::setup(AppManager* appManager, IApp* badgeApp) {
+void MainMenuApp::setup(AppManager* appManager, IApp* badgeApp, IApp* aboutApp, IApp* settingsApp) {
     _appManager = appManager;
     _badgeApp = badgeApp;
+    _aboutApp = aboutApp;
+    _settingsApp = settingsApp;
 }
 
 void MainMenuApp::onEnter() {
@@ -49,15 +51,36 @@ void MainMenuApp::handleButton(const ButtonEvent& event) {
             break;
 
         case ButtonId::Back:
-            if (_appManager && _badgeApp) {
-                _appManager->switchTo(_badgeApp);
-            }
+                if (_appManager && _badgeApp) {
+                    _appManager->switchTo(_badgeApp);
+                }
             break;
 
         case ButtonId::Select:
             Serial.printf("[MainMenuApp] selected: %s\n", _items[_selectedIndex]);
+            switch (_selectedIndex) {
+                case 0:
+                    if (_appManager && _badgeApp) {
+                        _appManager->switchTo(_badgeApp);
+                    }
+                    break;
+
+                case 1:
+                case 2:
+                    if (_appManager && _aboutApp) {
+                        _appManager->switchTo(_aboutApp);
+                    }
+                    break;
+                case 3:
+                    if (_appManager && _settingsApp) {
+                        _appManager->switchTo(_settingsApp);
+                    }
+                    break;
+            }
+        default:
             break;
     }
+    
 }
 
 void MainMenuApp::update() {

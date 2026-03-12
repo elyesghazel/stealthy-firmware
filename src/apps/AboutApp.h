@@ -4,12 +4,12 @@
 class AppManager;
 class IApp;
 
-class BadgeApp : public IApp {
+class AboutApp : public IApp {
 public:
-    BadgeApp();
+    AboutApp();
 
     void setup(AppManager* appManager, IApp* returnApp);
-    
+
     void onEnter() override;
     void onExit() override;
     void handleButton(const ButtonEvent& event) override;
@@ -19,6 +19,5 @@ public:
 private:
     AppManager* _appManager = nullptr;
     IApp* _returnApp = nullptr;
-
     bool _needsRender = true;
 };

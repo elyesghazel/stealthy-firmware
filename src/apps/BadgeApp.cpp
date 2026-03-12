@@ -4,9 +4,9 @@
 
 BadgeApp::BadgeApp() {}
 
-void BadgeApp::setup(AppManager* appManager, IApp* mainMenuApp) {
+void BadgeApp::setup(AppManager* appManager, IApp* returnApp) {
     _appManager = appManager;
-    _mainMenuApp = mainMenuApp;
+    _returnApp = returnApp;
 }
 
 void BadgeApp::onEnter() {
@@ -19,10 +19,19 @@ void BadgeApp::onExit() {
 }
 
 void BadgeApp::handleButton(const ButtonEvent& event) {
-    if (_appManager && _mainMenuApp &&
-        event.id == ButtonId::Select &&
-        event.action == ButtonAction::Press) {
-        _appManager->switchTo(_mainMenuApp);
+    if (!_appManager || !_returnApp) {
+        return;
+    }
+
+    switch (event.id) {
+        case ButtonId::Back:
+            if (event.action == ButtonAction::Press) {
+                _appManager->switchTo(_returnApp);
+            }
+            break;
+
+        default:
+            break;
     }
 }
 
@@ -40,16 +49,11 @@ void BadgeApp::render(DisplayManager& display) {
 
         display.setTitleFont();
         display.setTextBlack();
-        display.drawText(10, 25, "Stealthy");
+        display.drawText(10, 30, "Badge App");
 
         display.setDefaultFont();
-        display.drawText(10, 55, "Name:");
-        display.drawText(60, 55, _name);
-
-        display.drawText(10, 75, "Status:");
-        display.drawText(60, 75, _status);
-
-        display.drawText(10, 105, "Press Select");
+        display.setTextBlack();
+        display.drawText(50, 50, "Press BACK to return...");
     } while (display.nextPage());
 
     _needsRender = false;

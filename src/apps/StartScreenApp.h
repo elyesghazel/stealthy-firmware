@@ -4,11 +4,11 @@
 class AppManager;
 class IApp;
 
-class BadgeApp : public IApp {
+class StartScreenApp : public IApp {
 public:
-    BadgeApp();
+    StartScreenApp();
 
-    void setup(AppManager* appManager, IApp* returnApp);
+    void setup(AppManager* appManager, IApp* nextApp);
     
     void onEnter() override;
     void onExit() override;
@@ -18,7 +18,7 @@ public:
 
 private:
     AppManager* _appManager = nullptr;
-    IApp* _returnApp = nullptr;
+    IApp* _nextApp = nullptr;
 
     bool _needsRender = true;
 };
