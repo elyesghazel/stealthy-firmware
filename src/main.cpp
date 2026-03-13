@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <driver/rtc_io.h>
 
 #include "core/AppManager.h"
 #include "core/PowerManager.h"
@@ -35,15 +36,28 @@ MainMenuApp mainMenuApp;
 AboutApp aboutApp;
 SettingsApp settingsApp;
 
+
+
 void setup() {
     Serial.begin(115200);
+    delay(200);
+
+    esp_sleep_wakeup_cause_t wakeCause = esp_sleep_get_wakeup_cause();
+    bool wokeFromDeepSleep = (wakeCause == ESP_SLEEP_WAKEUP_EXT1);
 
     pinMode(LED_BLUE, OUTPUT);
     pinMode(LED_GREEN, OUTPUT);
 
-    displayManager.begin();
-    powerManager.begin(300000); // 5 min for development
+    displayManager.begin(!wokeFromDeepSleep); // true on cold boot, false after deep sleep wake
+    powerManager.begin(300000); // 5 minute inactivity timeout for sleep
     displayManager.attachPowerManager(&powerManager);
+
+    Serial.printf("Wake cause: %d\n", wakeCause);
+    if (wakeCause == ESP_SLEEP_WAKEUP_EXT1) {
+        Serial.printf("EXT1 status mask: 0x%llX\n", esp_sleep_get_ext1_wakeup_status());
+    }
+
+    rtc_gpio_deinit(GPIO_NUM_12);
 
     buttonManager.begin();
 
@@ -52,12 +66,7 @@ void setup() {
     aboutApp.setup(&appManager, &mainMenuApp);
     settingsApp.setup(&appManager, &mainMenuApp, &deviceSettings);
 
-    mainMenuApp.setup(
-        &appManager,
-        &badgeApp,
-        &settingsApp,
-        &aboutApp
-    );
+    mainMenuApp.setup(&appManager, &badgeApp, &settingsApp, &aboutApp);
 
     appManager.begin(&startScreenApp);
 }
@@ -78,10 +87,13 @@ void loop() {
     static unsigned long lastPrint = 0;
     if (millis() - lastPrint > 3000) {
         lastPrint = millis();
-        Serial.printf("Battery: %.2f V\n", powerManager.readBatteryVoltage());
+        Serial.print("Battery: ");
+        Serial.print(powerManager.readBatteryVoltage(), 2);
+        Serial.println(" V");
     }
 
     if (powerManager.shouldSleep()) {
+        displayManager.prepareForSleep();
         powerManager.enterDeepSleep();
     }
 

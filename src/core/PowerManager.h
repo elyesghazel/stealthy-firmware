@@ -9,6 +9,7 @@ public:
 
     bool shouldSleep() const;
     float readBatteryVoltage() const;
+    int batteryPercent() const;
     bool isUsbPowered() const;
     void enterDeepSleep();
 

@@ -18,10 +18,10 @@ GxEPD2_BW<GxEPD2_213_B74, GxEPD2_213_B74::HEIGHT> display(
     GxEPD2_213_B74(EPD_CS, EPD_DC, EPD_RST, EPD_BUSY)
 );
 
-void DisplayManager::begin() {
+void DisplayManager::begin(bool isColdBoot) {
     SPI.begin(EPD_SCK, -1, EPD_MOSI, EPD_CS);
 
-    display.init(115200, true, 2, false);
+    display.init(115200, isColdBoot, 2, false);
     display.setRotation(DISPLAY_ROTATION);
     display.setTextColor(GxEPD_BLACK);
 
@@ -36,6 +36,12 @@ void DisplayManager::begin() {
 
 void DisplayManager::attachPowerManager(PowerManager* powerManager) {
     _powerManager = powerManager;
+}
+
+void DisplayManager::prepareForSleep() {
+    // put display to sleep to save power, if supported
+    display.hibernate();
+    Serial.println("[DisplayManager] Display hibernated for sleep");
 }
 
 void DisplayManager::startFullWindowDraw() {
@@ -107,12 +113,41 @@ int DisplayManager::height() const {
 }
 
 int DisplayManager::batteryBarsFromVoltage(float voltage) const {
-    // tuned a bit more realistically for 1-cell Li-ion under light load
-    if (voltage >= 4.05f) return 4;
-    if (voltage >= 3.90f) return 3;
-    if (voltage >= 3.75f) return 2;
-    if (voltage >= 3.55f) return 1;
-    return 0;
+    const float upMargin = 0.04f;
+    const float downMargin = 0.06f;
+
+    if (_lastBatteryBars < 0) {
+        if (voltage >= 4.05f) _lastBatteryBars = 4;
+        else if (voltage >= 3.90f) _lastBatteryBars = 3;
+        else if (voltage >= 3.75f) _lastBatteryBars = 2;
+        else if (voltage >= 3.55f) _lastBatteryBars = 1;
+        else _lastBatteryBars = 0;
+        return _lastBatteryBars;
+    }
+
+    switch (_lastBatteryBars) {
+        case 4:
+            if (voltage < 4.05f - downMargin) _lastBatteryBars = 3;
+            break;
+        case 3:
+            if (voltage >= 4.05f + upMargin) _lastBatteryBars = 4;
+            else if (voltage < 3.90f - downMargin) _lastBatteryBars = 2;
+            break;
+        case 2:
+            if (voltage >= 3.90f + upMargin) _lastBatteryBars = 3;
+            else if (voltage < 3.75f - downMargin) _lastBatteryBars = 1;
+            break;
+        case 1:
+            if (voltage >= 3.75f + upMargin) _lastBatteryBars = 2;
+            else if (voltage < 3.55f - downMargin) _lastBatteryBars = 0;
+            break;
+        case 0:
+        default:
+            if (voltage >= 3.55f + upMargin) _lastBatteryBars = 1;
+            break;
+    }
+
+    return _lastBatteryBars;
 }
 
 void DisplayManager::drawBatteryIcon(int x, int y, float voltage) {

@@ -5,8 +5,9 @@ class PowerManager;
 
 class DisplayManager {
 public:
-    void begin();
+    void begin(bool isColdBoot);
     void attachPowerManager(PowerManager* powerManager);
+    void prepareForSleep();
 
     void startFullWindowDraw();
     void startPartialWindowDraw(int x, int y, int w, int h);
@@ -39,4 +40,5 @@ private:
 
     int batteryBarsFromVoltage(float voltage) const;
     void drawBatteryIcon(int x, int y, float voltage);
+    mutable int _lastBatteryBars = -1;
 };
