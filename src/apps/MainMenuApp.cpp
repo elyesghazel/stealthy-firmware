@@ -116,11 +116,12 @@ void MainMenuApp::render(DisplayManager& display) {
 }
 
 void MainMenuApp::moveSelectionUp() {
-    if (_selectedIndex <= 0) {
-        return;
+    if (_selectedIndex > 0) {
+        _selectedIndex--;
+    } else {
+        _selectedIndex = ITEM_COUNT - 1;
     }
 
-    _selectedIndex--;
     clampScrollToSelection();
 
     _partialUpdateCount++;
@@ -133,11 +134,12 @@ void MainMenuApp::moveSelectionUp() {
 }
 
 void MainMenuApp::moveSelectionDown() {
-    if (_selectedIndex >= ITEM_COUNT - 1) {
-        return;
+    if (_selectedIndex < ITEM_COUNT - 1) {
+        _selectedIndex++;
+    } else {
+        _selectedIndex = 0;
     }
 
-    _selectedIndex++;
     clampScrollToSelection();
 
     _partialUpdateCount++;

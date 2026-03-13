@@ -11,10 +11,14 @@ namespace {
     constexpr int VALUE_X = 150;
 
     constexpr int FIRST_ROW_Y = 64;
-    constexpr int ROW_SPACING = 18;
-    constexpr int ROW_HEIGHT = 18;
+    constexpr int ROW_SPACING = 16;
+    constexpr int ROW_HEIGHT = 16;
 
-    constexpr int FOOTER_Y = 128;
+    constexpr int VISIBLE_ITEMS = 4;
+
+    constexpr int FOOTER_Y = 116;
+    constexpr int SCROLL_TOP_Y = 56;
+    constexpr int SCROLL_BOTTOM_Y = 112;
 }
 
 SettingsApp::SettingsApp() {}
@@ -47,6 +51,7 @@ void SettingsApp::onEnter() {
     Serial.println("[SettingsApp] enter");
     _selectedIndex = 0;
     _previousSelectedIndex = 0;
+    _scrollOffset = 0;
     _partialUpdateCount = 0;
     _mode = SettingsMode::Browse;
     requestFullRender();
@@ -96,6 +101,27 @@ void SettingsApp::render(DisplayManager& display) {
 
     _needsRender = false;
 }
+void SettingsApp::clampScrollToSelection() {
+    if (_selectedIndex < _scrollOffset) {
+        _scrollOffset = _selectedIndex;
+    }
+
+    if (_selectedIndex >= _scrollOffset + VISIBLE_ITEMS) {
+        _scrollOffset = _selectedIndex - VISIBLE_ITEMS + 1;
+    }
+}
+
+void SettingsApp::drawScrollIndicators(DisplayManager& display) {
+    display.setTextBlack();
+
+    if (_scrollOffset > 0) {
+        display.drawText(6, SCROLL_TOP_Y, "^");
+    }
+    
+    if (_scrollOffset + VISIBLE_ITEMS < ITEM_COUNT) {
+        display.drawText(6, SCROLL_BOTTOM_Y, "v");
+    }
+}
 
 void SettingsApp::drawValue(DisplayManager& display, int index, int y) {
     const char* value = currentValueText(index);
@@ -112,27 +138,28 @@ void SettingsApp::drawSettingsList(DisplayManager& display) {
     display.setDefaultFont();
     display.setTextBlack();
 
-    for (int i = 0; i < ITEM_COUNT; i++) {
-        const int y = rowBaselineY(i);
+    for (int visibleRow = 0; visibleRow < VISIBLE_ITEMS; visibleRow++) {
+        int itemIndex = _scrollOffset + visibleRow;
+        if (itemIndex >= ITEM_COUNT) {
+            break;
+        }
 
-        if (i == _selectedIndex) {
+        const int y = rowBaselineY(visibleRow);
+
+        if (itemIndex == _selectedIndex) {
             display.drawText(CARET_X, y, ">");
         } else {
             display.drawText(CARET_X, y, " ");
         }
 
-        display.drawText(LABEL_X, y, _items[i]);
+        display.drawText(LABEL_X, y, _items[itemIndex]);
 
-        if (i < ITEM_COUNT - 1) {
-            drawValue(display, i, y);
+        if (itemIndex < ITEM_COUNT - 1) {
+            drawValue(display, itemIndex, y);
         }
     }
 
-    if (_mode == SettingsMode::Edit) {
-        display.drawText(18, FOOTER_Y, "EDIT: Up/Down, Back");
-    } else {
-        display.drawText(18, FOOTER_Y, "BROWSE: Select");
-    }
+    drawScrollIndicators(display);
 }
 
 void SettingsApp::renderFull(DisplayManager& display) {
@@ -187,18 +214,24 @@ void SettingsApp::moveUp() {
     }
 
     if (_mode == SettingsMode::Browse) {
-        if (_selectedIndex > 0) {
-            _previousSelectedIndex = _selectedIndex;
-            _selectedIndex--;
+        _previousSelectedIndex = _selectedIndex;
 
-            _partialUpdateCount++;
-            if (_partialUpdateCount >= 20) {
-                _partialUpdateCount = 0;
-                requestFullRender();
-            } else {
-                requestPartialRender();
-            }
+        if (_selectedIndex > 0) {
+            _selectedIndex--;
+        } else {
+            _selectedIndex = ITEM_COUNT - 1;
         }
+
+        clampScrollToSelection();
+
+        _partialUpdateCount++;
+        if (_partialUpdateCount >= 20) {
+            _partialUpdateCount = 0;
+            requestFullRender();
+        } else {
+            requestPartialRender();
+        }
+
         return;
     }
 
@@ -240,18 +273,24 @@ void SettingsApp::moveDown() {
     }
 
     if (_mode == SettingsMode::Browse) {
-        if (_selectedIndex < ITEM_COUNT - 1) {
-            _previousSelectedIndex = _selectedIndex;
-            _selectedIndex++;
+        _previousSelectedIndex = _selectedIndex;
 
-            _partialUpdateCount++;
-            if (_partialUpdateCount >= 20) {
-                _partialUpdateCount = 0;
-                requestFullRender();
-            } else {
-                requestPartialRender();
-            }
+        if (_selectedIndex < ITEM_COUNT - 1) {
+            _selectedIndex++;
+        } else {
+            _selectedIndex = 0;
         }
+
+        clampScrollToSelection();
+
+        _partialUpdateCount++;
+        if (_partialUpdateCount >= 20) {
+            _partialUpdateCount = 0;
+            requestFullRender();
+        } else {
+            requestPartialRender();
+        }
+
         return;
     }
 

@@ -29,6 +29,9 @@ public:
 
 private:
     static const int ITEM_COUNT = 5;
+    static constexpr int VISIBLE_ITEMS = 4;
+
+    int _scrollOffset = 0;
 
     AppManager* _appManager = nullptr;
     IApp* _returnApp = nullptr;
@@ -57,6 +60,10 @@ private:
 
     void requestFullRender();
     void requestPartialRender();
+
+    void clampScrollToSelection();
+    void drawScrollIndicators(DisplayManager& display);
+
 
     void renderFull(DisplayManager& display);
     void renderPartial(DisplayManager& display);

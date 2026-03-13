@@ -5,6 +5,10 @@
 #include "core/PowerManager.h"
 #include "drivers/ButtonManager.h"
 #include "drivers/DisplayManager.h"
+#include "drivers/FileSystemDriver.h"
+#include "core/StorageManager.h"
+#include "core/AppContext.h"
+
 
 #include "DeviceSettings.h"
 
@@ -23,19 +27,35 @@ static const int PIN_BTN_BACK = 13;
 static const int LED_BLUE = 2;
 static const int LED_GREEN = 1;
 
+// drivers and managers
+FileSystemDriver fileSystemDriver;
+StorageManager storageManager(&fileSystemDriver);
 DisplayManager displayManager;
 PowerManager powerManager;
 AppManager appManager;
+AppContext appContext;
 ButtonManager buttonManager(PIN_BTN_UP, PIN_BTN_DOWN, PIN_BTN_SELECT, PIN_BTN_BACK);
 
 DeviceSettings deviceSettings;
 
+// apps
 StartScreenApp startScreenApp;
 BadgeApp badgeApp;
 MainMenuApp mainMenuApp;
 AboutApp aboutApp;
 SettingsApp settingsApp;
 
+
+void initFileSystem() {
+    // note: file system gets initialized in StorageManager
+    if (!storageManager.begin()) {
+        Serial.println("[Storage] init failed");
+    } else {
+        Serial.println("[Storage] ready");
+        Serial.println("[DEBUG Storage]: " + storageManager.getBadgeName());
+        Serial.println("[DEBUG Storage]: " + storageManager.getBadgeStatus());
+    }
+}
 
 
 void setup() {
@@ -61,6 +81,15 @@ void setup() {
 
     buttonManager.begin();
 
+    appContext.display = &displayManager;
+    appContext.buttons = &buttonManager;
+    appContext.power = &powerManager;
+    appContext.storage = &storageManager;
+
+    // Initialize filesystem and storage manager
+    initFileSystem();
+
+    // app initialization and setup
     startScreenApp.setup(&appManager, &mainMenuApp);
     badgeApp.setup(&appManager, &mainMenuApp);
     aboutApp.setup(&appManager, &mainMenuApp);
@@ -68,7 +97,7 @@ void setup() {
 
     mainMenuApp.setup(&appManager, &badgeApp, &settingsApp, &aboutApp);
 
-    appManager.begin(&startScreenApp);
+    appManager.begin(&startScreenApp, &appContext);
 }
 
 void loop() {

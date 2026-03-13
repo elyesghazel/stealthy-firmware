@@ -1,6 +1,7 @@
 #include "BadgeApp.h"
 #include "core/AppManager.h"
 #include "drivers/DisplayManager.h"
+#include "../core/StorageManager.h"
 
 BadgeApp::BadgeApp() {}
 
@@ -51,6 +52,14 @@ void BadgeApp::render(DisplayManager& display) {
         display.setTitleFont();
         display.setTextBlack();
         display.drawText(4, 32, "Badge App");
+        String name = _appManager->context()->storage->getBadgeName();
+        String status = _appManager->context()->storage->getBadgeStatus();
+
+        display.setDefaultFont();
+        display.setTextBlack();
+        display.drawText(4, 80, ("Name: " + name).c_str());
+        display.drawText(4, 110, ("Status: " + status).c_str());
+        
 
         display.setDefaultFont();
         display.setTextBlack();

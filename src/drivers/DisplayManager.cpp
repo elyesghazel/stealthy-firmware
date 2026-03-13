@@ -39,7 +39,7 @@ void DisplayManager::attachPowerManager(PowerManager* powerManager) {
 }
 
 void DisplayManager::prepareForSleep() {
-    // put display to sleep to save power, if supported
+    // put display to sleep to save power
     display.hibernate();
     Serial.println("[DisplayManager] Display hibernated for sleep");
 }

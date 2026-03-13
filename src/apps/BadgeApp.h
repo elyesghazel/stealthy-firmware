@@ -3,6 +3,7 @@
 
 class AppManager;
 class IApp;
+class StorageManager;
 
 class BadgeApp : public IApp {
 public:
@@ -19,6 +20,6 @@ public:
 private:
     AppManager* _appManager = nullptr;
     IApp* _returnApp = nullptr;
-
+    
     bool _needsRender = true;
 };

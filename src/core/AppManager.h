@@ -1,9 +1,10 @@
 #pragma once
 #include "core/IApp.h"
+#include "core/AppContext.h"
 
 class AppManager {
 public:
-    void begin(IApp* initialApp);
+    void begin(IApp* initialApp, AppContext* context);
     void switchTo(IApp* nextApp);
 
     void handleButton(const ButtonEvent& event);
@@ -12,6 +13,10 @@ public:
 
     IApp* currentApp() const;
 
+    AppContext* context() const;
+
 private:
     IApp* _currentApp = nullptr;
+
+    AppContext* _context = nullptr;
 };

@@ -1,11 +1,16 @@
 #include "AppManager.h"
 #include "drivers/DisplayManager.h"
 
-void AppManager::begin(IApp* initialApp) {
+void AppManager::begin(IApp* initialApp, AppContext* context) {
     _currentApp = initialApp;
+    _context = context;
     if (_currentApp) {
         _currentApp->onEnter();
     }
+}
+
+AppContext* AppManager::context() const {
+    return _context;
 }
 
 void AppManager::switchTo(IApp* nextApp) {
