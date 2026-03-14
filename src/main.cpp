@@ -6,8 +6,10 @@
 #include "drivers/ButtonManager.h"
 #include "drivers/DisplayManager.h"
 #include "drivers/FileSystemDriver.h"
+#include "drivers/IrDriver.h"
 #include "core/StorageManager.h"
 #include "core/AppContext.h"
+#include "core/IrManager.h"
 
 
 #include "DeviceSettings.h"
@@ -16,6 +18,7 @@
 #include "apps/BadgeApp.h"
 #include "apps/MainMenuApp.h"
 #include "apps/AboutApp.h"
+#include "apps/IrToolsApp.h"
 #include "apps/SettingsApp.h"
 
 // pins
@@ -34,6 +37,8 @@ DisplayManager displayManager;
 PowerManager powerManager;
 AppManager appManager;
 AppContext appContext;
+IrDriver irDriver;
+IrManager irManager(&irDriver);
 ButtonManager buttonManager(PIN_BTN_UP, PIN_BTN_DOWN, PIN_BTN_SELECT, PIN_BTN_BACK);
 
 DeviceSettings deviceSettings;
@@ -44,7 +49,7 @@ BadgeApp badgeApp;
 MainMenuApp mainMenuApp;
 AboutApp aboutApp;
 SettingsApp settingsApp;
-
+IrToolsApp irToolsApp;
 
 void initFileSystem() {
     // note: file system gets initialized in StorageManager
@@ -68,6 +73,7 @@ void setup() {
     pinMode(LED_BLUE, OUTPUT);
     pinMode(LED_GREEN, OUTPUT);
 
+
     displayManager.begin(!wokeFromDeepSleep); // true on cold boot, false after deep sleep wake
     powerManager.begin(300000); // 5 minute inactivity timeout for sleep
     displayManager.attachPowerManager(&powerManager);
@@ -81,10 +87,18 @@ void setup() {
 
     buttonManager.begin();
 
+    if (!irManager.begin()) {
+        Serial.println("[IR Manager] failed to initialize");
+    } else {
+        Serial.println("[IR Manager] ready");
+    }
+
     appContext.display = &displayManager;
     appContext.buttons = &buttonManager;
     appContext.power = &powerManager;
     appContext.storage = &storageManager;
+    appContext.ir = &irManager;
+    
 
     // Initialize filesystem and storage manager
     initFileSystem();
@@ -94,8 +108,10 @@ void setup() {
     badgeApp.setup(&appManager, &mainMenuApp);
     aboutApp.setup(&appManager, &mainMenuApp);
     settingsApp.setup(&appManager, &mainMenuApp, &deviceSettings);
+    irToolsApp.setup(&appManager, &mainMenuApp);
 
-    mainMenuApp.setup(&appManager, &badgeApp, &settingsApp, &aboutApp);
+
+    mainMenuApp.setup(&appManager, &badgeApp, &settingsApp, &aboutApp, &irToolsApp);
 
     appManager.begin(&startScreenApp, &appContext);
 }

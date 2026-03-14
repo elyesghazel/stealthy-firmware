@@ -18,7 +18,8 @@ public:
         AppManager* appManager,
         IApp* badgeApp,
         IApp* settingsApp,
-        IApp* aboutApp
+        IApp* aboutApp,
+        IApp* irToolsApp
     );
 
     void onEnter() override;
@@ -35,6 +36,8 @@ private:
     IApp* _badgeApp = nullptr;
     IApp* _settingsApp = nullptr;
     IApp* _aboutApp = nullptr;
+    IApp* _irToolsApp = nullptr;
+    
 
     const char* _items[ITEM_COUNT] = {
         "Badge",

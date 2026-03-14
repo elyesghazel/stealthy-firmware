@@ -24,12 +24,14 @@ void MainMenuApp::setup(
     AppManager* appManager,
     IApp* badgeApp,
     IApp* settingsApp,
-    IApp* aboutApp
+    IApp* aboutApp,
+    IApp* irToolsApp
 ) {
     _appManager = appManager;
     _badgeApp = badgeApp;
     _settingsApp = settingsApp;
     _aboutApp = aboutApp;
+    _irToolsApp = irToolsApp;
 }
 
 void MainMenuApp::onEnter() {
@@ -87,7 +89,7 @@ void MainMenuApp::handleButton(const ButtonEvent& event) {
                     break;
 
                 case 4:
-                    Serial.println("[MainMenuApp] IR Tools not linked yet");
+                    if (_irToolsApp) _appManager->switchTo(_irToolsApp);
                     break;
 
                 case 5:
