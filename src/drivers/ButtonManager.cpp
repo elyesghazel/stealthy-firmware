@@ -5,18 +5,27 @@ ButtonManager::ButtonManager(int upPin, int downPin, int selectPin, int backPin)
       _downPin(downPin),
       _selectPin(selectPin),
       _backPin(backPin),
-      _lastUpState(false),
-      _lastDownState(false),
-      _lastSelectState(false),
-      _lastBackState(false),
       _queueHead(0),
-      _queueTail(0) {}
+      _queueTail(0) {
+}
 
 void ButtonManager::begin() {
     pinMode(_upPin, INPUT_PULLUP);
     pinMode(_downPin, INPUT_PULLUP);
     pinMode(_selectPin, INPUT_PULLUP);
     pinMode(_backPin, INPUT_PULLUP);
+
+    _up.pin = _upPin;
+    _up.id = ButtonId::Up;
+
+    _down.pin = _downPin;
+    _down.id = ButtonId::Down;
+
+    _select.pin = _selectPin;
+    _select.id = ButtonId::Select;
+
+    _back.pin = _backPin;
+    _back.id = ButtonId::Back;
 }
 
 bool ButtonManager::readPressed(int pin) {
@@ -33,29 +42,59 @@ void ButtonManager::pushEvent(ButtonId id, ButtonAction action) {
     _queueTail = nextTail;
 }
 
+void ButtonManager::updateButton(ButtonState& button, unsigned long now) {
+    bool rawNow = readPressed(button.pin);
+
+    if (rawNow != button.lastRawPressed) {
+        button.lastRawPressed = rawNow;
+        button.lastDebounceMs = now;
+    }
+
+    if ((now - button.lastDebounceMs) >= DEBOUNCE_MS) {
+        if (rawNow != button.stablePressed) {
+            button.stablePressed = rawNow;
+
+            if (button.stablePressed) {
+                button.pressedSinceMs = now;
+                button.lastRepeatMs = now;
+                button.longPressFired = false;
+
+                pushEvent(button.id, ButtonAction::Press);
+            } else {
+                button.longPressFired = false;
+                button.lastRepeatMs = 0;
+                button.pressedSinceMs = 0;
+            }
+        }
+    }
+
+    if (button.stablePressed) {
+        if (!button.longPressFired &&
+            (now - button.pressedSinceMs) >= LONG_PRESS_MS) {
+            button.longPressFired = true;
+            pushEvent(button.id, ButtonAction::LongPress);
+        }
+
+        const bool allowRepeat =
+            (button.id == ButtonId::Up || button.id == ButtonId::Down);
+
+        if (allowRepeat &&
+            rawNow &&  // important: must still be physically pressed now
+            (now - button.pressedSinceMs) >= REPEAT_START_MS &&
+            (now - button.lastRepeatMs) >= REPEAT_INTERVAL_MS) {
+            button.lastRepeatMs = now;
+            pushEvent(button.id, ButtonAction::Repeat);
+        }
+    }
+}
+
 void ButtonManager::update() {
-    bool upNow = readPressed(_upPin);
-    bool downNow = readPressed(_downPin);
-    bool selectNow = readPressed(_selectPin);
-    bool backNow = readPressed(_backPin);
+    unsigned long now = millis();
 
-    if (upNow && !_lastUpState) {
-        pushEvent(ButtonId::Up, ButtonAction::Press);
-    }
-    if (downNow && !_lastDownState) {
-        pushEvent(ButtonId::Down, ButtonAction::Press);
-    }
-    if (selectNow && !_lastSelectState) {
-        pushEvent(ButtonId::Select, ButtonAction::Press);
-    }
-    if (backNow && !_lastBackState) {
-        pushEvent(ButtonId::Back, ButtonAction::Press);
-    }
-
-    _lastUpState = upNow;
-    _lastDownState = downNow;
-    _lastSelectState = selectNow;
-    _lastBackState = backNow;
+    updateButton(_up, now);
+    updateButton(_down, now);
+    updateButton(_select, now);
+    updateButton(_back, now);
 }
 
 bool ButtonManager::hasEvent() const {

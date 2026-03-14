@@ -1,15 +1,21 @@
 #include <Arduino.h>
 #include <driver/rtc_io.h>
+#include <esp_system.h>
 
-#include "core/AppManager.h"
-#include "core/PowerManager.h"
+
 #include "drivers/ButtonManager.h"
 #include "drivers/DisplayManager.h"
 #include "drivers/FileSystemDriver.h"
 #include "drivers/IrDriver.h"
+#include "drivers/LedDriver.h"
+
+#include "core/AppManager.h"
+#include "core/PowerManager.h"
 #include "core/StorageManager.h"
 #include "core/AppContext.h"
 #include "core/IrManager.h"
+#include "core/LedManager.h"
+#include "core/PortalManager.h"
 
 
 #include "DeviceSettings.h"
@@ -20,6 +26,8 @@
 #include "apps/AboutApp.h"
 #include "apps/IrToolsApp.h"
 #include "apps/SettingsApp.h"
+#include "apps/PortalApp.h"
+
 
 // pins
 static const int PIN_BTN_UP = 10;
@@ -31,15 +39,20 @@ static const int LED_BLUE = 2;
 static const int LED_GREEN = 1;
 
 // drivers and managers
+AppContext appContext;
 FileSystemDriver fileSystemDriver;
+IrDriver irDriver;
+LedDriver ledDriver(LED_BLUE, LED_GREEN);
+
 StorageManager storageManager(&fileSystemDriver);
 DisplayManager displayManager;
 PowerManager powerManager;
 AppManager appManager;
-AppContext appContext;
-IrDriver irDriver;
 IrManager irManager(&irDriver);
+LedManager ledManager(&ledDriver);
+
 ButtonManager buttonManager(PIN_BTN_UP, PIN_BTN_DOWN, PIN_BTN_SELECT, PIN_BTN_BACK);
+PortalManager portalManager(&storageManager, &irManager, &powerManager);
 
 DeviceSettings deviceSettings;
 
@@ -50,6 +63,7 @@ MainMenuApp mainMenuApp;
 AboutApp aboutApp;
 SettingsApp settingsApp;
 IrToolsApp irToolsApp;
+PortalApp portalApp;
 
 void initFileSystem() {
     // note: file system gets initialized in StorageManager
@@ -63,20 +77,33 @@ void initFileSystem() {
 }
 
 
+void printResetReason() {
+    esp_reset_reason_t reason = esp_reset_reason();
+    Serial.print("[Boot] Reset reason: ");
+    Serial.println((int)reason);
+}
+
+
+
 void setup() {
     Serial.begin(115200);
     delay(200);
+    printResetReason();
 
     esp_sleep_wakeup_cause_t wakeCause = esp_sleep_get_wakeup_cause();
     bool wokeFromDeepSleep = (wakeCause == ESP_SLEEP_WAKEUP_EXT1);
 
-    pinMode(LED_BLUE, OUTPUT);
-    pinMode(LED_GREEN, OUTPUT);
+    ledDriver.begin();
+    ledManager.begin();
+    ledManager.showBooting();
 
 
     displayManager.begin(!wokeFromDeepSleep); // true on cold boot, false after deep sleep wake
     powerManager.begin(300000); // 5 minute inactivity timeout for sleep
+    
     displayManager.attachPowerManager(&powerManager);
+    printResetReason();
+
 
     Serial.printf("Wake cause: %d\n", wakeCause);
     if (wakeCause == ESP_SLEEP_WAKEUP_EXT1) {
@@ -98,7 +125,8 @@ void setup() {
     appContext.power = &powerManager;
     appContext.storage = &storageManager;
     appContext.ir = &irManager;
-    
+    appContext.leds = &ledManager;
+    appContext.portal = &portalManager;
 
     // Initialize filesystem and storage manager
     initFileSystem();
@@ -109,16 +137,22 @@ void setup() {
     aboutApp.setup(&appManager, &mainMenuApp);
     settingsApp.setup(&appManager, &mainMenuApp, &deviceSettings);
     irToolsApp.setup(&appManager, &mainMenuApp);
+    portalApp.setup(&appManager, &mainMenuApp);
 
+    // portalManager.begin();
 
-    mainMenuApp.setup(&appManager, &badgeApp, &settingsApp, &aboutApp, &irToolsApp);
+    mainMenuApp.setup(&appManager, &badgeApp, &settingsApp, &aboutApp, &irToolsApp, &portalApp);
 
     appManager.begin(&startScreenApp, &appContext);
+
+    ledManager.showSuccess();
 }
 
 void loop() {
     buttonManager.update();
     powerManager.update();
+    ledManager.update();
+    portalManager.update();
 
     while (buttonManager.hasEvent()) {
         ButtonEvent event = buttonManager.getNextEvent();
@@ -141,6 +175,5 @@ void loop() {
         displayManager.prepareForSleep();
         powerManager.enterDeepSleep();
     }
-
-    delay(50);
+    delay(10);
 }

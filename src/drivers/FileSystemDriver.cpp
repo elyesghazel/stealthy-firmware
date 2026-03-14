@@ -67,3 +67,8 @@ std::vector<String> FileSystemDriver::listFiles(const char* path) const {
     dir.close();
     return files;
 }
+
+bool FileSystemDriver::removeFile(const char* path) {
+    if (!_mounted) return false;
+    return LittleFS.remove(path);
+}

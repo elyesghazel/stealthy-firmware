@@ -62,25 +62,33 @@ void SettingsApp::onExit() {
 }
 
 void SettingsApp::handleButton(const ButtonEvent& event) {
-    if (event.action != ButtonAction::Press) {
-        return;
-    }
+    const bool moveEvent =
+        (event.action == ButtonAction::Press ||
+         event.action == ButtonAction::Repeat);
 
     switch (event.id) {
         case ButtonId::Up:
-            moveUp();
+            if (moveEvent) {
+                moveUp();
+            }
             break;
 
         case ButtonId::Down:
-            moveDown();
+            if (moveEvent) {
+                moveDown();
+            }
             break;
 
         case ButtonId::Select:
-            selectItem();
+            if (event.action == ButtonAction::Press) {
+                selectItem();
+            }
             break;
 
         case ButtonId::Back:
-            goBack();
+            if (event.action == ButtonAction::Press) {
+                goBack();
+            }
             break;
     }
 }

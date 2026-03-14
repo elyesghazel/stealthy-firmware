@@ -65,3 +65,14 @@ bool IrManager::replayLast() {
 
     return _driver->send(_lastCapture);
 }
+
+bool IrManager::setLastCapture(const IrCapture& capture) {
+    if (!capture.valid) {
+        return false;
+    }
+
+    _lastCapture = capture;
+    _newCapture = false;
+    _recording = false;
+    return true;
+}

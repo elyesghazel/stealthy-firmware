@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Stealthy Portal</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <main class="app-shell">
+    <div class="shell-noise"></div>
+
+    <div class="wrap">
+      <header class="hero">
+        <div class="hero-topline">
+          <span class="prompt">root@stealthy:~# portal</span>
+          <span class="session-pill">secure session</span>
+        </div>
+
+        <h1>Stealthy Control Panel</h1>
+        <p class="sub">Badge provisioning and IR device control</p>
+      </header>
+
+      <section class="grid">
+        <section class="panel panel-system">
+          <div class="panel-head">
+            <h2>System</h2>
+            <span class="panel-tag online">online</span>
+          </div>
+
+          <div class="system-stats">
+            <div class="stat-box">
+              <span class="stat-label">Status</span>
+              <strong id="status">Loading...</strong>
+            </div>
+
+            <div class="stat-box">
+              <span class="stat-label">Battery</span>
+              <strong id="battery">--.-- V</strong>
+            </div>
+          </div>
+
+          <p class="panel-note">For stable Wi-Fi control, keep the device adequately charged.</p>
+        </section>
+
+        <section class="panel panel-settings">
+          <div class="panel-head">
+            <h2>Badge Settings</h2>
+            <span class="panel-tag">config</span>
+          </div>
+
+          <form id="settingsForm" class="form">
+            <label class="field">
+              <span>Badge Name</span>
+              <input id="badgeName" name="badgeName" type="text" maxlength="32" placeholder="e.g. stealth-unit-07">
+            </label>
+
+            <label class="field">
+              <span>Badge Status</span>
+              <input id="badgeStatus" name="badgeStatus" type="text" maxlength="32"
+                placeholder="e.g. active / idle / hidden">
+            </label>
+
+            <button type="submit" class="primary-btn">Save Settings</button>
+          </form>
+
+          <div id="settingsResult" class="result" aria-live="polite"></div>
+        </section>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Saved IR Captures</h2>
+          <span class="panel-tag">library</span>
+        </div>
+
+        <div id="irList" class="list">Loading...</div>
+      </section>
+    </div>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+
+</html>

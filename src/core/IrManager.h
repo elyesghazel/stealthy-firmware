@@ -19,6 +19,7 @@ public:
     void clearNewCaptureFlag();
 
     bool replayLast();
+    bool setLastCapture(const IrCapture& capture);
 
 private:
     IrDriver* _driver = nullptr;

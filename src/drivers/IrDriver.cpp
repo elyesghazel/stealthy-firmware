@@ -68,7 +68,6 @@ bool IrDriver::send(const IrCapture& capture) {
     }
 
     Serial.println("[IR] sending capture");
-    digitalWrite(IR_STATUS_LED_PIN, HIGH);
     bool success = false;
 
 
@@ -121,7 +120,6 @@ bool IrDriver::send(const IrCapture& capture) {
         success = true;
     }
 
-    digitalWrite(IR_STATUS_LED_PIN, LOW);
 
     return success;
 }

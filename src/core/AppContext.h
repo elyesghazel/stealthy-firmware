@@ -5,6 +5,8 @@ class ButtonManager;
 class PowerManager;
 class StorageManager;
 class IrManager;
+class LedManager;
+class PortalManager;
 
 struct AppContext {
     DisplayManager* display = nullptr;
@@ -12,4 +14,6 @@ struct AppContext {
     PowerManager* power = nullptr;
     StorageManager* storage = nullptr;
     IrManager* ir = nullptr;
+    LedManager* leds = nullptr;
+    PortalManager* portal = nullptr;
 };

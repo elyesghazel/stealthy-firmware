@@ -1,12 +1,14 @@
 #pragma once
 
 #include "../core/IApp.h"
+#include <vector>
+#include <Arduino.h>
+#include "../core/StorageManager.h"
 
 class AppManager;
 class DisplayManager;
 class ButtonEvent;
-class MainMenuApp;
-class IrManager;
+
 
 class IrToolsApp : public IApp {
 public:
@@ -24,7 +26,8 @@ private:
     enum class Mode {
         Menu,
         Recording,
-        Captured
+        Captured,
+        SavedList
     };
 
     enum class RenderMode {
@@ -32,8 +35,8 @@ private:
         Partial
     };
 
-    static constexpr int ITEM_COUNT = 3;
-    static constexpr int VISIBLE_ITEMS = 3;
+    static constexpr int MENU_ITEM_COUNT = 5;
+    static constexpr int VISIBLE_ITEMS = 4;
 
     void requestFullRender();
     void requestPartialRender();
@@ -48,8 +51,12 @@ private:
 
     void drawMenu(DisplayManager& display);
     void drawCapturedInfo(DisplayManager& display);
+    void drawSavedList(DisplayManager& display);
+    void saveLastCapture();
 
     int rowBaselineY(int visibleRow) const;
+    void refreshSavedItems();
+    void clampSavedScroll();
 
     AppManager* _appManager = nullptr;
     IApp* _returnApp = nullptr;
@@ -61,9 +68,19 @@ private:
     int _selectedIndex = 0;
     int _partialUpdateCount = 0;
 
-    const char* _items[ITEM_COUNT] = {
+    int _savedSelectedIndex = 0;
+    int _savedScrollOffset = 0;
+
+    
+    std::vector<IrSavedItem> _savedItems;
+
+    unsigned long _saveFeedbackUntilMs = 0;
+    bool _showSavedMessage = false;
+    const char* _menuItems[MENU_ITEM_COUNT] = {
         "Record",
         "Replay Last",
+        "Save Last",
+        "Saved",
         "Back"
     };
 };

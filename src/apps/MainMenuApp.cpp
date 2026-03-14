@@ -25,14 +25,17 @@ void MainMenuApp::setup(
     IApp* badgeApp,
     IApp* settingsApp,
     IApp* aboutApp,
-    IApp* irToolsApp
+    IApp* irToolsApp,
+    IApp* portalApp
 ) {
     _appManager = appManager;
     _badgeApp = badgeApp;
     _settingsApp = settingsApp;
     _aboutApp = aboutApp;
     _irToolsApp = irToolsApp;
+    _portalApp = portalApp;
 }
+
 
 void MainMenuApp::onEnter() {
     Serial.println("[MainMenuApp] enter");
@@ -47,26 +50,36 @@ void MainMenuApp::onExit() {
 }
 
 void MainMenuApp::handleButton(const ButtonEvent& event) {
-    if (event.action != ButtonAction::Press) {
-        return;
-    }
+    const bool moveEvent =
+        (event.action == ButtonAction::Press ||
+         event.action == ButtonAction::Repeat);
 
     switch (event.id) {
         case ButtonId::Up:
-            moveSelectionUp();
+            if (moveEvent) {
+                moveSelectionUp();
+            }
             break;
 
         case ButtonId::Down:
-            moveSelectionDown();
+            if (moveEvent) {
+                moveSelectionDown();
+            }
             break;
 
         case ButtonId::Back:
-            if (_appManager && _badgeApp) {
-                _appManager->switchTo(_badgeApp);
+            if (event.action == ButtonAction::Press) {
+                if (_appManager && _badgeApp) {
+                    _appManager->switchTo(_badgeApp);
+                }
             }
             break;
 
         case ButtonId::Select:
+            if (event.action != ButtonAction::Press) {
+                return;
+            }
+
             if (!_appManager) {
                 return;
             }
@@ -85,13 +98,13 @@ void MainMenuApp::handleButton(const ButtonEvent& event) {
                     break;
 
                 case 3:
-                    Serial.println("[MainMenuApp] WiFi Tools not linked yet");
+                    if (_portalApp) _appManager->switchTo(_portalApp);
                     break;
 
                 case 4:
                     if (_irToolsApp) _appManager->switchTo(_irToolsApp);
                     break;
-
+                
                 case 5:
                     if (_badgeApp) _appManager->switchTo(_badgeApp);
                     break;

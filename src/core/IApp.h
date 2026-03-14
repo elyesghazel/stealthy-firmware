@@ -11,7 +11,8 @@ enum class ButtonId {
 
 enum class ButtonAction {
     Press,
-    LongPress
+    LongPress,
+    Repeat
 };
 
 struct ButtonEvent {

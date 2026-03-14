@@ -4,12 +4,13 @@
 
 class AppManager;
 class IApp;
+class DisplayManager;
 
-class StartScreenApp : public IApp {
+class PortalApp : public IApp {
 public:
-    StartScreenApp();
+    PortalApp();
 
-    void setup(AppManager* appManager, IApp* nextApp);
+    void setup(AppManager* appManager, IApp* returnApp);
 
     void onEnter() override;
     void onExit() override;
@@ -23,21 +24,26 @@ private:
         Partial
     };
 
+    enum class Mode {
+        Idle,
+        Running,
+        Failed
+    };
+
+    Mode _mode = Mode::Idle;
+
+
     void requestFullRender();
     void requestPartialRender();
 
     void renderFull(DisplayManager& display);
     void renderPartial(DisplayManager& display);
-
-    void drawBootContent(DisplayManager& display);
-    void drawProgressBar(DisplayManager& display, int percent);
+    void drawContent(DisplayManager& display);
 
     AppManager* _appManager = nullptr;
-    IApp* _nextApp = nullptr;
+    IApp* _returnApp = nullptr;
 
     bool _needsRender = true;
     RenderMode _renderMode = RenderMode::Full;
-
-    int _stage = 0;
-    unsigned long _stageStartedMs = 0;
+    bool _portalStartedOk = false;
 };

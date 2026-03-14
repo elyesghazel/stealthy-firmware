@@ -19,8 +19,10 @@ public:
         IApp* badgeApp,
         IApp* settingsApp,
         IApp* aboutApp,
-        IApp* irToolsApp
+        IApp* irToolsApp,
+        IApp* portalApp
     );
+
 
     void onEnter() override;
     void onExit() override;
@@ -37,13 +39,14 @@ private:
     IApp* _settingsApp = nullptr;
     IApp* _aboutApp = nullptr;
     IApp* _irToolsApp = nullptr;
+    IApp* _portalApp = nullptr;
     
 
     const char* _items[ITEM_COUNT] = {
         "Badge",
         "Settings",
         "About",
-        "WiFi Tools",
+        "Captive Portal",
         "IR Tools"
     };
 
