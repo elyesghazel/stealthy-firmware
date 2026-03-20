@@ -35,6 +35,9 @@ private:
     void handleApiIrRename();
     void handleApiIrDelete();
     void handleApiFileDownload();
+    void handleApiFsList();
+    void handleApiFileUpload();
+
 
 
     String contentTypeForPath(const String& path) const;

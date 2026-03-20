@@ -1,0 +1,14 @@
+name=Power
+protocol=NEC
+bits=32
+value=1434689424
+---
+name=Volume Up
+protocol=NEC
+bits=32
+value=551489775
+---
+name=Mute
+protocol=NEC
+bits=32
+value=551502015

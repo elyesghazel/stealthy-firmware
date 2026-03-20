@@ -27,7 +27,9 @@ private:
         Menu,
         Recording,
         Captured,
-        SavedList
+        SavedList,
+        UploadList,
+        UploadSignals
     };
 
     enum class RenderMode {
@@ -35,7 +37,7 @@ private:
         Partial
     };
 
-    static constexpr int MENU_ITEM_COUNT = 5;
+    static constexpr int MENU_ITEM_COUNT = 6;
     static constexpr int VISIBLE_ITEMS = 4;
 
     void requestFullRender();
@@ -71,6 +73,20 @@ private:
     int _savedSelectedIndex = 0;
     int _savedScrollOffset = 0;
 
+    std::vector<IrUploadItem>   _uploadItems;
+    std::vector<IrUploadSignal> _uploadSignals;
+    int _uploadSelectedIndex  = 0;
+    int _uploadScrollOffset   = 0;
+    int _signalSelectedIndex  = 0;
+    int _signalScrollOffset   = 0;
+    String _currentUploadFile;
+
+    void refreshUploadItems();
+    void drawUploadList(DisplayManager& display);
+    void drawUploadSignals(DisplayManager& display);
+    void clampUploadScroll();
+    void clampSignalScroll();
+
     
     std::vector<IrSavedItem> _savedItems;
 
@@ -81,6 +97,7 @@ private:
         "Replay Last",
         "Save Last",
         "Saved",
+        "Upload Files",
         "Back"
     };
 };

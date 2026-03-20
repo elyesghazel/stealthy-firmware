@@ -1,3 +1,5 @@
+let currentFsPath = "/ir";
+
 async function fetchJson(url, options = {}) {
   const res = await fetch(url, options);
   return await res.json();
@@ -157,12 +159,148 @@ async function loadBattery() {
   el.textContent = `Battery: ${Number(data.voltage).toFixed(2)} V`;
 }
 
+function parentPath(path) {
+  if (!path || path === "/") return "/";
+  const idx = path.lastIndexOf("/");
+  if (idx <= 0) return "/";
+  return path.substring(0, idx);
+}
+
+async function downloadFile(path) {
+  window.location.href = `/api/file/download?path=${encodeURIComponent(path)}`;
+}
+
+async function openFolder(path) {
+  currentFsPath = path;
+  await loadFsList();
+}
+
+async function uploadCurrentFile(event) {
+  event.preventDefault();
+
+  const input = document.getElementById("uploadFile");
+  if (!input.files || input.files.length === 0) {
+    alert("Choose a file first.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", input.files[0]);
+
+  const res = await fetch(
+    `/api/file/upload?path=${encodeURIComponent(currentFsPath)}`,
+    {
+      method: "POST",
+      body: formData,
+    },
+  );
+
+  if (!res.ok) {
+    alert("Upload failed.");
+    return;
+  }
+
+  input.value = "";
+  await loadFsList();
+}
+
+async function loadFsList() {
+  const data = await fetchJson(
+    `/api/fs/list?path=${encodeURIComponent(currentFsPath)}`,
+  );
+  const root = document.getElementById("fsList");
+  const pathEl = document.getElementById("fsPath");
+
+  pathEl.textContent = currentFsPath;
+  root.innerHTML = "";
+
+  if (currentFsPath !== "/ir") {
+    const upRow = document.createElement("div");
+    upRow.className = "file-row";
+
+    const meta = document.createElement("div");
+    meta.className = "file-meta";
+
+    const name = document.createElement("div");
+    name.className = "file-name";
+    name.textContent = "..";
+
+    const fp = document.createElement("div");
+    fp.className = "file-path";
+    fp.textContent = parentPath(currentFsPath);
+
+    meta.appendChild(name);
+    meta.appendChild(fp);
+
+    const actions = document.createElement("div");
+    actions.className = "file-actions";
+
+    const openBtn = document.createElement("button");
+    openBtn.textContent = "Up";
+    openBtn.onclick = () => openFolder(parentPath(currentFsPath));
+
+    actions.appendChild(openBtn);
+    upRow.appendChild(meta);
+    upRow.appendChild(actions);
+    root.appendChild(upRow);
+  }
+
+  if (!data.entries || data.entries.length === 0) {
+    const empty = document.createElement("div");
+    empty.textContent = "Folder is empty.";
+    root.appendChild(empty);
+    return;
+  }
+
+  for (const entry of data.entries) {
+    const row = document.createElement("div");
+    row.className = "file-row";
+
+    const meta = document.createElement("div");
+    meta.className = "file-meta";
+
+    const name = document.createElement("div");
+    name.className = "file-name";
+    name.textContent = entry.isDirectory ? `[DIR] ${entry.name}` : entry.name;
+
+    const fp = document.createElement("div");
+    fp.className = "file-path";
+    fp.textContent = entry.path;
+
+    meta.appendChild(name);
+    meta.appendChild(fp);
+
+    const actions = document.createElement("div");
+    actions.className = "file-actions";
+
+    if (entry.isDirectory) {
+      const openBtn = document.createElement("button");
+      openBtn.textContent = "Open";
+      openBtn.onclick = () => openFolder(entry.path);
+      actions.appendChild(openBtn);
+    } else {
+      const dlBtn = document.createElement("button");
+      dlBtn.textContent = "Download";
+      dlBtn.onclick = () => downloadFile(entry.path);
+      actions.appendChild(dlBtn);
+    }
+
+    row.appendChild(meta);
+    row.appendChild(actions);
+    root.appendChild(row);
+  }
+}
 document
   .getElementById("settingsForm")
   .addEventListener("submit", saveSettings);
+document
+  .getElementById("uploadForm")
+  .addEventListener("submit", uploadCurrentFile);
 
 loadStatus();
 loadSettings();
-loadIrList();
 loadBattery();
+loadIrList();
+loadFsList();
+
 setInterval(loadBattery, 3000);

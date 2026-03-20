@@ -16,6 +16,12 @@ PortalManager::PortalManager(StorageManager* storageManager, IrManager* irManage
       _server(80) {
 }
 
+static bool isSafeFsPath(const String& path) {
+    return !path.isEmpty() &&
+           path.startsWith("/") &&
+           path.indexOf("..") < 0;
+}
+
 
 bool PortalManager::begin() {
     if (_running) {
@@ -105,16 +111,22 @@ void PortalManager::setupRoutes() {
     _server.on("/style.css", HTTP_GET, [this]() { handleCss(); });
     _server.on("/app.js", HTTP_GET, [this]() { handleJs(); });
 
-    _server.on("/api/battery", HTTP_GET, [this]() { handleApiBattery(); });
     _server.on("/api/status", HTTP_GET, [this]() { handleApiStatus(); });
+    _server.on("/api/battery", HTTP_GET, [this]() { handleApiBattery(); });
     _server.on("/api/settings", HTTP_GET, [this]() { handleApiSettingsGet(); });
     _server.on("/api/settings", HTTP_POST, [this]() { handleApiSettingsPost(); });
+
     _server.on("/api/ir/list", HTTP_GET, [this]() { handleApiIrList(); });
     _server.on("/api/ir/send", HTTP_POST, [this]() { handleApiIrSend(); });
     _server.on("/api/ir/rename", HTTP_POST, [this]() { handleApiIrRename(); });
     _server.on("/api/ir/delete", HTTP_POST, [this]() { handleApiIrDelete(); });
-    _server.on("/api/file/download", HTTP_GET, [this]() { handleApiFileDownload(); });
 
+    _server.on("/api/fs/list", HTTP_GET, [this]() { handleApiFsList(); });
+    _server.on("/api/file/download", HTTP_GET, [this]() { handleApiFileDownload(); });
+    _server.on("/api/file/upload", HTTP_POST,
+        [this]() { _server.send(200, "application/json", "{\"ok\":true}"); },
+        [this]() { handleApiFileUpload(); }
+    );
 
     _server.onNotFound([this]() {
         if (!serveFile("/web/index.html")) {
@@ -122,7 +134,6 @@ void PortalManager::setupRoutes() {
         }
     });
 }
-
 void PortalManager::handleRoot() {
     serveFile("/web/index.html");
 }
@@ -300,10 +311,80 @@ void PortalManager::handleApiIrDelete() {
 }
 
 
+
+
+void PortalManager::handleApiFsList() {
+    if (_storageManager == nullptr) {
+        _server.send(500, "application/json", "{\"ok\":false}");
+        return;
+    }
+
+    String path = _server.arg("path");
+    if (path.isEmpty()) {
+        path = "/ir";
+    }
+
+    if (!isSafeFsPath(path)) {
+        _server.send(400, "application/json", "{\"ok\":false,\"error\":\"bad_path\"}");
+        return;
+    }
+
+    std::vector<FileEntry> entries = _storageManager->listFsEntries(path);
+
+    // sort dirs first, then by name
+    for (size_t i = 0; i < entries.size(); i++) {
+        for (size_t j = i + 1; j < entries.size(); j++) {
+            bool swapNeeded = false;
+
+            if (entries[j].isDirectory && !entries[i].isDirectory) {
+                swapNeeded = true;
+            } else if (entries[j].isDirectory == entries[i].isDirectory &&
+                       entries[j].name < entries[i].name) {
+                swapNeeded = true;
+            }
+
+            if (swapNeeded) {
+                FileEntry tmp = entries[i];
+                entries[i] = entries[j];
+                entries[j] = tmp;
+            }
+        }
+    }
+
+    String json = "{";
+    json += "\"ok\":true,";
+    json += "\"path\":\"" + path + "\",";
+    json += "\"entries\":[";
+
+    for (size_t i = 0; i < entries.size(); i++) {
+        String name = entries[i].name;
+        String fullPath = entries[i].path;
+
+        name.replace("\"", "\\\"");
+        fullPath.replace("\"", "\\\"");
+
+        json += "{";
+        json += "\"name\":\"" + name + "\",";
+        json += "\"path\":\"" + fullPath + "\",";
+        json += "\"isDirectory\":";
+        json += entries[i].isDirectory ? "true" : "false";
+        json += "}";
+
+        if (i + 1 < entries.size()) {
+            json += ",";
+        }
+    }
+
+    json += "]";
+    json += "}";
+
+    _server.send(200, "application/json", json);
+}
+
 void PortalManager::handleApiFileDownload() {
     String path = _server.arg("path");
 
-    if (path.isEmpty() || path.indexOf("..") >= 0) {
+    if (!isSafeFsPath(path)) {
         _server.send(400, "text/plain", "Invalid path");
         return;
     }
@@ -318,6 +399,52 @@ void PortalManager::handleApiFileDownload() {
     _server.sendHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
     _server.streamFile(file, "application/octet-stream");
     file.close();
+}
+
+void PortalManager::handleApiFileUpload() {
+    HTTPUpload& upload = _server.upload();
+
+    static File uploadFile;
+    static String uploadPath;
+
+    if (upload.status == UPLOAD_FILE_START) {
+        String dir = _server.arg("path");
+        if (dir.isEmpty()) {
+            dir = "/ir/db";
+        }
+
+        if (!isSafeFsPath(dir)) {
+            return;
+        }
+
+        if (_storageManager) {
+            _storageManager->ensureDirectory(dir);
+        }
+
+        String filename = upload.filename;
+        filename.replace("\\", "_");
+        filename.replace("/", "_");
+
+        uploadPath = dir + "/" + filename;
+
+        Serial.print("[Portal] upload start: ");
+        Serial.println(uploadPath);
+
+        uploadFile = LittleFS.open(uploadPath, "w");
+    }
+    else if (upload.status == UPLOAD_FILE_WRITE) {
+        if (uploadFile) {
+            uploadFile.write(upload.buf, upload.currentSize);
+        }
+    }
+    else if (upload.status == UPLOAD_FILE_END) {
+        if (uploadFile) {
+            uploadFile.close();
+        }
+
+        Serial.print("[Portal] upload done: ");
+        Serial.println(uploadPath);
+    }
 }
 
 

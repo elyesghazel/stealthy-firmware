@@ -11,7 +11,18 @@ bool StorageManager::begin() {
     }
 
     _available = _fileSystemDriver->begin();
-    return _available;
+    if (!_available) {
+        return false;
+    }
+
+    _fileSystemDriver->ensureDir("/config");
+    _fileSystemDriver->ensureDir("/payloads");
+    _fileSystemDriver->ensureDir("/ir");
+    _fileSystemDriver->ensureDir("/ir/saved");
+    _fileSystemDriver->ensureDir("/ir/uploads");
+    _fileSystemDriver->ensureDir("/ir/db");
+
+    return true;
 }
 
 bool StorageManager::available() const {
@@ -65,6 +76,17 @@ String StorageManager::readPayloadFile(const String& filename) const {
     String path = String(PAYLOADS_DIR) + "/" + filename;
     return _fileSystemDriver->readTextFile(path.c_str());
 }
+
+std::vector<FileEntry> StorageManager::listFsEntries(const String& path) const {
+    if (!_available) return {};
+    return _fileSystemDriver->listEntries(path.c_str());
+}
+
+bool StorageManager::ensureDirectory(const String& path) {
+    if (!_available) return false;
+    return _fileSystemDriver->ensureDir(path.c_str());
+}
+
 
 // ---------- IR storage ----------
 
@@ -314,6 +336,74 @@ bool StorageManager::renameIrCaptureById(int id, const String& newName) {
         safeName + "\n"
     );
 }
+
+std::vector<IrUploadItem> StorageManager::listIrUploads() const {
+    std::vector<IrUploadItem> items;
+    if (!_available) return items;
+
+    std::vector<String> files = _fileSystemDriver->listFiles(IR_UPLOADS_DIR);
+    for (const String& file : files) {
+        int slash = file.lastIndexOf('/');
+        String base = (slash >= 0) ? file.substring(slash + 1) : file;
+        if (!base.endsWith(".ir")) continue;
+
+        IrUploadItem item;
+        item.filename = base;
+        item.displayName = base.substring(0, base.length() - 3);
+        items.push_back(item);
+    }
+    return items;
+}
+
+std::vector<IrUploadSignal> StorageManager::loadIrUploadFile(const String& filename) const {
+    std::vector<IrUploadSignal> signals;
+    if (!_available) return signals;
+
+    String path = String(IR_UPLOADS_DIR) + "/" + filename;
+    String text = _fileSystemDriver->readTextFile(path.c_str());
+    if (text.isEmpty()) return signals;
+
+    // Split on "---\n" or "---" at line boundaries
+    int start = 0;
+    while (start < (int)text.length()) {
+        int sep = text.indexOf("\n---", start);
+        String block;
+        if (sep < 0) {
+            block = text.substring(start);
+            start = text.length();
+        } else {
+            block = text.substring(start, sep);
+            start = sep + 4; // skip "\n---"
+            // skip optional \n after separator
+            if (start < (int)text.length() && text[start] == '\n') start++;
+        }
+
+        block.trim();
+        if (block.isEmpty()) continue;
+
+        IrUploadSignal sig;
+        sig.name = extractValue(block, "name");
+        if (sig.name.isEmpty()) sig.name = "Signal";
+
+        // Remove the name line before deserializing capture
+        String captureBlock = block;
+        int nameLine = captureBlock.indexOf("name=");
+        if (nameLine >= 0) {
+            int nameEnd = captureBlock.indexOf('\n', nameLine);
+            if (nameEnd >= 0)
+                captureBlock = captureBlock.substring(0, nameLine)
+                             + captureBlock.substring(nameEnd + 1);
+            else
+                captureBlock = captureBlock.substring(0, nameLine);
+        }
+
+        if (deserializeIrCapture(captureBlock, sig.capture)) {
+            signals.push_back(sig);
+        }
+    }
+    return signals;
+}
+
 
 bool StorageManager::deleteIrCaptureById(int id) {
     if (!_available) {
