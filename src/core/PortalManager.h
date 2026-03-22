@@ -51,6 +51,7 @@ private:
     WebServer _server;
 
     bool _running = false;
+    bool _uploadHadError = false;
 
     static constexpr const char* AP_SSID = "STEALTHY-SETUP";
     static constexpr const char* AP_IP = "192.168.4.1";

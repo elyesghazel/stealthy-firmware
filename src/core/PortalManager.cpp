@@ -22,6 +22,32 @@ static bool isSafeFsPath(const String& path) {
            path.indexOf("..") < 0;
 }
 
+static bool tryParsePositiveIntArg(WebServer& server, const char* key, int& outValue) {
+    if (!server.hasArg(key)) {
+        return false;
+    }
+
+    String raw = server.arg(key);
+    raw.trim();
+    if (raw.isEmpty()) {
+        return false;
+    }
+
+    for (size_t i = 0; i < raw.length(); i++) {
+        if (!isDigit(raw[i])) {
+            return false;
+        }
+    }
+
+    long parsed = raw.toInt();
+    if (parsed <= 0) {
+        return false;
+    }
+
+    outValue = static_cast<int>(parsed);
+    return true;
+}
+
 
 bool PortalManager::begin() {
     if (_running) {
@@ -124,7 +150,13 @@ void PortalManager::setupRoutes() {
     _server.on("/api/fs/list", HTTP_GET, [this]() { handleApiFsList(); });
     _server.on("/api/file/download", HTTP_GET, [this]() { handleApiFileDownload(); });
     _server.on("/api/file/upload", HTTP_POST,
-        [this]() { _server.send(200, "application/json", "{\"ok\":true}"); },
+        [this]() {
+            if (_uploadHadError) {
+                _server.send(400, "application/json", "{\"ok\":false}");
+            } else {
+                _server.send(200, "application/json", "{\"ok\":true}");
+            }
+        },
         [this]() { handleApiFileUpload(); }
     );
 
@@ -255,7 +287,12 @@ void PortalManager::handleApiIrSend() {
         return;
     }
 
-    int id = _server.arg("id").toInt();
+    int id = 0;
+    if (!tryParsePositiveIntArg(_server, "id", id)) {
+        _server.send(400, "application/json", "{\"ok\":false,\"error\":\"bad_id\"}");
+        return;
+    }
+
     IrCapture capture;
 
     if (!_storageManager->loadIrCaptureById(id, capture)) {
@@ -280,7 +317,12 @@ void PortalManager::handleApiIrRename() {
         return;
     }
 
-    int id = _server.arg("id").toInt();
+    int id = 0;
+    if (!tryParsePositiveIntArg(_server, "id", id)) {
+        _server.send(400, "application/json", "{\"ok\":false,\"error\":\"bad_id\"}");
+        return;
+    }
+
     String name = _server.arg("name");
 
     bool ok = _storageManager->renameIrCaptureById(id, name);
@@ -299,7 +341,12 @@ void PortalManager::handleApiIrDelete() {
         return;
     }
 
-    int id = _server.arg("id").toInt();
+    int id = 0;
+    if (!tryParsePositiveIntArg(_server, "id", id)) {
+        _server.send(400, "application/json", "{\"ok\":false,\"error\":\"bad_id\"}");
+        return;
+    }
+
     bool ok = _storageManager->deleteIrCaptureById(id);
 
     String json = "{";
@@ -408,12 +455,15 @@ void PortalManager::handleApiFileUpload() {
     static String uploadPath;
 
     if (upload.status == UPLOAD_FILE_START) {
+        _uploadHadError = false;
+
         String dir = _server.arg("path");
         if (dir.isEmpty()) {
             dir = "/ir/db";
         }
 
         if (!isSafeFsPath(dir)) {
+            _uploadHadError = true;
             return;
         }
 
@@ -431,15 +481,22 @@ void PortalManager::handleApiFileUpload() {
         Serial.println(uploadPath);
 
         uploadFile = LittleFS.open(uploadPath, "w");
+        if (!uploadFile) {
+            _uploadHadError = true;
+        }
     }
     else if (upload.status == UPLOAD_FILE_WRITE) {
         if (uploadFile) {
             uploadFile.write(upload.buf, upload.currentSize);
+        } else {
+            _uploadHadError = true;
         }
     }
     else if (upload.status == UPLOAD_FILE_END) {
         if (uploadFile) {
             uploadFile.close();
+        } else {
+            _uploadHadError = true;
         }
 
         Serial.print("[Portal] upload done: ");

@@ -68,6 +68,7 @@ private:
     bool _needsRender = true;
 
     int _selectedIndex = 0;
+    int _menuScrollOffset = 0;
     int _partialUpdateCount = 0;
 
     int _savedSelectedIndex = 0;
@@ -84,6 +85,7 @@ private:
     void refreshUploadItems();
     void drawUploadList(DisplayManager& display);
     void drawUploadSignals(DisplayManager& display);
+    void clampMenuScroll();
     void clampUploadScroll();
     void clampSignalScroll();
 

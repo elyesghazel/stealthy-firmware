@@ -43,6 +43,7 @@ void IrToolsApp::onEnter() {
     Serial.println("[IrToolsApp] enter");
     _mode = Mode::Menu;
     _selectedIndex = 0;
+    _menuScrollOffset = 0;
     _savedSelectedIndex = 0;
     _savedScrollOffset = 0;
     _partialUpdateCount = 0;
@@ -52,6 +53,20 @@ void IrToolsApp::onEnter() {
     _signalScrollOffset  = 0;
     refreshSavedItems();
     requestFullRender();
+}
+
+void IrToolsApp::clampMenuScroll() {
+    if (_selectedIndex < _menuScrollOffset) {
+        _menuScrollOffset = _selectedIndex;
+    }
+
+    if (_selectedIndex >= _menuScrollOffset + VISIBLE_ITEMS) {
+        _menuScrollOffset = _selectedIndex - VISIBLE_ITEMS + 1;
+    }
+
+    if (_menuScrollOffset < 0) {
+        _menuScrollOffset = 0;
+    }
 }
 
 void IrToolsApp::onExit() {
@@ -209,6 +224,8 @@ void IrToolsApp::moveUp() {
             _selectedIndex = MENU_ITEM_COUNT - 1;
         }
 
+        clampMenuScroll();
+
         _partialUpdateCount++;
         if (_partialUpdateCount >= 20) {
             _partialUpdateCount = 0;
@@ -266,6 +283,8 @@ void IrToolsApp::moveDown() {
             _selectedIndex = 0;
         }
 
+        clampMenuScroll();
+
         _partialUpdateCount++;
         if (_partialUpdateCount >= 20) {
             _partialUpdateCount = 0;
@@ -296,6 +315,26 @@ void IrToolsApp::moveDown() {
         } else {
             requestPartialRender();
         }
+        return;
+    }
+
+    if (_mode == Mode::UploadList) {
+        if (_uploadItems.empty()) return;
+        _uploadSelectedIndex = (_uploadSelectedIndex < (int)_uploadItems.size() - 1)
+            ? _uploadSelectedIndex + 1
+            : 0;
+        clampUploadScroll();
+        requestPartialRender();
+        return;
+    }
+
+    if (_mode == Mode::UploadSignals) {
+        if (_uploadSignals.empty()) return;
+        _signalSelectedIndex = (_signalSelectedIndex < (int)_uploadSignals.size() - 1)
+            ? _signalSelectedIndex + 1
+            : 0;
+        clampSignalScroll();
+        requestPartialRender();
     }
 }
 
@@ -348,10 +387,9 @@ void IrToolsApp::selectItem() {
         return;
     }
     if (_mode == Mode::UploadList) {
-        if (_uploadItems.empty()) return;
+        if (_uploadItems.empty() || !storage) return;
         _currentUploadFile = _uploadItems[_uploadSelectedIndex].filename;
-        _uploadSignals = _appManager->context()->storage
-                            ->loadIrUploadFile(_currentUploadFile);
+        _uploadSignals = storage->loadIrUploadFile(_currentUploadFile);
         _signalSelectedIndex = 0;
         _signalScrollOffset  = 0;
         _mode = Mode::UploadSignals;
@@ -445,11 +483,24 @@ void IrToolsApp::drawMenu(DisplayManager& display) {
     display.setDefaultFont();
     display.setTextBlack();
 
-    for (int i = 0; i < MENU_ITEM_COUNT; i++) {
-        const int y = rowBaselineY(i);
+    for (int visibleRow = 0; visibleRow < VISIBLE_ITEMS; visibleRow++) {
+        int itemIndex = _menuScrollOffset + visibleRow;
+        if (itemIndex >= MENU_ITEM_COUNT) {
+            break;
+        }
 
-        display.drawText(CARET_X, y, (i == _selectedIndex) ? ">" : " ");
-        display.drawText(LABEL_X, y, _menuItems[i]);
+        const int y = rowBaselineY(visibleRow);
+
+        display.drawText(CARET_X, y, (itemIndex == _selectedIndex) ? ">" : " ");
+        display.drawText(LABEL_X, y, _menuItems[itemIndex]);
+    }
+
+    if (_menuScrollOffset > 0) {
+        display.drawText(6, SCROLL_TOP_Y, "^");
+    }
+
+    if (_menuScrollOffset + VISIBLE_ITEMS < MENU_ITEM_COUNT) {
+        display.drawText(6, SCROLL_BOTTOM_Y, "v");
     }
 }
 
