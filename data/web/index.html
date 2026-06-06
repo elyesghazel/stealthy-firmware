@@ -81,18 +81,10 @@
           <input id="badge-qr" type="text" maxlength="200" autocomplete="off"
                  placeholder="https://your-link.com">
         </label>
-        <label class="field">
-          <span class="field-label">Display Mode</span>
-          <select id="badge-mode">
-            <option value="0">Text only</option>
-            <option value="1">QR + Info side-by-side</option>
-            <option value="2">Full-screen QR</option>
-          </select>
-        </label>
         <button type="submit" class="btn-primary" id="badge-save-btn">Save</button>
         <div class="inline-feedback" id="badge-feedback" aria-live="polite"></div>
       </form>
-      <p class="note top-gap">Use <code>Select</code> on the device to cycle display modes.</p>
+      <p class="note top-gap">QR data is shown live on the device. Keep URLs short (under 60 chars) for best scan results.</p>
     </div>
 
     <!-- ── IR Library ─────────────────────────────────── -->

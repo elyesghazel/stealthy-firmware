@@ -98,7 +98,6 @@ async function loadBadge() {
   const statusSel    = document.getElementById('badge-status');
   const taglineInput = document.getElementById('badge-tagline');
   const qrInput      = document.getElementById('badge-qr');
-  const modeSel      = document.getElementById('badge-mode');
   const topLabel     = document.getElementById('badge-name-top');
 
   nameInput.value    = data.badgeName    || '';
@@ -110,10 +109,6 @@ async function loadBadge() {
   const sval = data.badgeStatus || 'Online';
   const sopt = [...statusSel.options].find(o => o.value.toLowerCase() === sval.toLowerCase());
   statusSel.value = sopt ? sopt.value : 'Online';
-
-  const mval = String(data.badgeMode ?? 0);
-  const mopt = [...modeSel.options].find(o => o.value === mval);
-  modeSel.value = mopt ? mopt.value : '0';
 }
 
 document.getElementById('badge-form').addEventListener('submit', async e => {
@@ -124,28 +119,23 @@ document.getElementById('badge-form').addEventListener('submit', async e => {
   const status   = document.getElementById('badge-status').value;
   const tagline  = document.getElementById('badge-tagline').value.trim();
   const qrData   = document.getElementById('badge-qr').value.trim();
-  const mode     = document.getElementById('badge-mode').value;
 
   setBtn(btn, 'Saving…', true);
   const data = await apiPost('/api/settings', {
     badgeName: name, badgeStatus: status,
-    badgeTagline: tagline, badgeQrData: qrData, badgeMode: mode
+    badgeTagline: tagline, badgeQrData: qrData
   });
   setBtn(btn, 'Save', false);
 
   if (data.ok) {
-    // Reload from device to confirm what was actually stored
-    const topLabel = document.getElementById('badge-name-top');
+    // Re-read from device to confirm what was actually stored
+    const topLabel  = document.getElementById('badge-name-top');
     const confirmed = await api('/api/settings');
     if (confirmed.ok) {
       if (topLabel) topLabel.textContent = confirmed.badgeName || 'stealthy';
       document.getElementById('badge-name').value    = confirmed.badgeName    || '';
       document.getElementById('badge-tagline').value = confirmed.badgeTagline || '';
       document.getElementById('badge-qr').value      = confirmed.badgeQrData  || '';
-      const mval = String(confirmed.badgeMode ?? 0);
-      const modeSel = document.getElementById('badge-mode');
-      const mopt = [...modeSel.options].find(o => o.value === mval);
-      modeSel.value = mopt ? mopt.value : '0';
       setFeedback(feedback, 'Saved.');
     } else {
       setFeedback(feedback, 'Saved (verify failed).', false);
