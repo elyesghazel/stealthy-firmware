@@ -59,9 +59,11 @@ namespace {
     constexpr int WIFI_TY  = 94;
     constexpr int HINT_TY  = 113;
 
-    // QR
-    constexpr uint8_t MAX_VER  = 4;
-    constexpr int     QR_SCALE = 3;
+    // QR — buffer MUST be a compile-time constant, not a VLA.
+    // qrcode_getBufferSize(4) = ((4*4+17)^2 + 7) / 8 = 136
+    constexpr uint8_t MAX_VER   = 4;
+    constexpr int     QR_BUF_SZ = 136;
+    constexpr int     QR_SCALE  = 3;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -120,17 +122,18 @@ void BadgeApp::render(DisplayManager& display) {
 
     // ── Build QR once, before the page loop ──────────────────────────────────
     QRCode  qrcode;
-    uint8_t buf[qrcode_getBufferSize(MAX_VER)];
+    uint8_t buf[QR_BUF_SZ];   // compile-time constant — no VLA
     bool    hasQr = false;
 
     if (!qrData.isEmpty()) {
         for (uint8_t v = 1; v <= MAX_VER; v++) {
-            if (qrcode_initText(&qrcode, buf, v, ECC_LOW, qrData.c_str())) {
-                hasQr = true;
-                break;
-            }
+            bool ok = qrcode_initText(&qrcode, buf, v, ECC_LOW, qrData.c_str());
+            Serial.printf("[BadgeApp] QR v%d init=%d size=%d data='%s'\n",
+                          v, ok, ok ? qrcode.size : 0, qrData.c_str());
+            if (ok) { hasQr = true; break; }
         }
     }
+    Serial.printf("[BadgeApp] hasQr=%d\n", hasQr);
 
     // QR pixel size and centered position inside right column
     int qrPx = hasQr ? (int)qrcode.size * QR_SCALE : 0;
