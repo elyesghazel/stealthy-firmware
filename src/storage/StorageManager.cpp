@@ -23,6 +23,16 @@ bool StorageManager::begin() {
     _fileSystemDriver->ensureDir("/ir/uploads");
     _fileSystemDriver->ensureDir("/ir/db");
 
+    // Create default config files so LittleFS never errors on a missing read
+    auto ensureFile = [this](const char* path, const char* def) {
+        if (!_fileSystemDriver->exists(path))
+            _fileSystemDriver->writeTextFile(path, def);
+    };
+    ensureFile(NAME_PATH,    "Stealthy\n");
+    ensureFile(STATUS_PATH,  "Online\n");
+    ensureFile(TAGLINE_PATH, "\n");
+    ensureFile(QR_DATA_PATH, "\n");
+
     return true;
 }
 
