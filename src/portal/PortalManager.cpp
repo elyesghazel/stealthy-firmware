@@ -254,6 +254,9 @@ void PortalManager::handleApiSettingsPost() {
     int    mode    = _server.hasArg("badgeMode")
                      ? _server.arg("badgeMode").toInt() : -1;
 
+    Serial.printf("[Portal] settings POST: name='%s' status='%s' tagline='%s' qr='%s' mode=%d\n",
+        name.c_str(), status.c_str(), tagline.c_str(), qrData.c_str(), mode);
+
     bool ok = _storageManager->setBadgeName(name)
            && _storageManager->setBadgeStatus(status);
 

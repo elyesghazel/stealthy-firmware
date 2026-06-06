@@ -6,11 +6,46 @@
 
 #include <qrcode.h>
 
-namespace {
-    constexpr int STATUS_BAR_H = 20;   // pixels below status bar divider
-    constexpr int HINT_Y       = 114;  // bottom hint line baseline
+// ─── Font metrics for FreeMonoBold9pt7b ──────────────────────────────────────
+// Y coordinate passed to drawText() is the BASELINE.
+// Capital ascent above baseline: ~12px. Descender below baseline: ~3px.
+//
+// For the default (no) font, Y coordinate is the TOP of the character.
+// Character height: 8px.  Character width: 6px per glyph.
 
-    // Version 4 buffer fits up to 78 alphanumeric chars at ECC_LOW
+namespace {
+    constexpr uint8_t DISP_W    = 250;  // display width  (rotation=3)
+    constexpr uint8_t DISP_H    = 122;  // display height (rotation=3)
+
+    constexpr int BAR_H         = 20;   // status bar occupies y 0-19
+    constexpr int MARGIN_X      = 5;
+
+    // ── Text mode ─────────────────────────────────────
+    constexpr int TM_NAME_BL    = 36;   // title font baseline (cap top ≈ y=24)
+    constexpr int TM_SEP_Y      = 42;   // 1px separator line
+    constexpr int TM_BOX_Y      = 47;   // status pill top
+    constexpr int TM_BOX_H      = 12;   // status pill height
+    constexpr int TM_STAT_TY    = 48;   // default font TOP inside pill
+    constexpr int TM_TAG_TY     = 66;   // tagline default font TOP
+    constexpr int TM_DOT_Y      = 86;   // mode dot top
+    constexpr int TM_HINT_TY    = 110;  // hint default font TOP
+
+    // ── QR + Side mode ────────────────────────────────
+    constexpr int QS_QR_X       = 3;    // QR left edge
+    constexpr int QS_QR_Y       = 22;   // QR top (just below divider)
+    constexpr int QS_QR_GAP     = 6;    // gap between QR right edge and text
+    constexpr int QS_QR_SCALE   = 2;    // pixels per QR module
+    constexpr int QS_NAME_BL    = 36;   // title font baseline (same as text mode)
+    constexpr int QS_STAT_TY    = 44;   // status default font TOP
+    constexpr int QS_TAG_TY     = 57;   // tagline default font TOP
+    constexpr int QS_DOT_Y      = 72;   // mode dot top
+    constexpr int QS_HINT_TY    = 110;  // hint TOP
+
+    // ── Mode dots ─────────────────────────────────────
+    constexpr int DOT_SIZE      = 6;
+    constexpr int DOT_SPACING   = 10;
+
+    // QR version cap
     constexpr uint8_t MAX_QR_VER = 4;
 }
 
@@ -67,23 +102,32 @@ void BadgeApp::render(DisplayManager& display) {
     }
 }
 
-// ─── QR helper ────────────────────────────────────────────────────────────
+// ─── Mode dots helper (used in Text and QrSide) ───────────────────────────────
 
-uint8_t BadgeApp::drawQrAt(DisplayManager& display,
-                            int ox, int oy, int scale, const String& data) {
-    if (data.isEmpty() || scale < 1) return 0;
-
-    QRCode  qrcode;
-    uint8_t buf[qrcode_getBufferSize(MAX_QR_VER)];
-
-    bool ok = false;
-    for (uint8_t v = 1; v <= MAX_QR_VER; v++) {
-        if (qrcode_initText(&qrcode, buf, v, ECC_LOW, data.c_str())) {
-            ok = true; break;
-        }
+static void drawModeDots(DisplayManager& display, int x0, int y, int currentMode) {
+    for (int i = 0; i < (int)BadgeApp::MODE_COUNT; i++) {
+        int bx = x0 + i * DOT_SPACING;
+        if (i == currentMode) display.fillRect(bx, y, DOT_SIZE, DOT_SIZE);
+        else                   display.drawRect(bx, y, DOT_SIZE, DOT_SIZE);
     }
-    if (!ok) return 0;
+}
 
+// ─── QR helper (compute + draw inside page loop) ─────────────────────────────
+
+// initQr: tries versions 1-MAX_QR_VER at ECC_LOW.
+// Returns true and fills qrcode / buf.
+// Non-const per ricmoo library API
+static bool initQr(QRCode& qrcode, uint8_t* buf, const String& data) {
+    if (data.isEmpty()) return false;
+    for (uint8_t v = 1; v <= MAX_QR_VER; v++) {
+        if (qrcode_initText(&qrcode, buf, v, ECC_LOW, data.c_str()))
+            return true;
+    }
+    return false;
+}
+
+static void drawQrModules(DisplayManager& display,
+                           QRCode& qrcode, int ox, int oy, int scale) {
     for (uint8_t qy = 0; qy < qrcode.size; qy++) {
         for (uint8_t qx = 0; qx < qrcode.size; qx++) {
             if (qrcode_getModule(&qrcode, qx, qy)) {
@@ -91,10 +135,9 @@ uint8_t BadgeApp::drawQrAt(DisplayManager& display,
             }
         }
     }
-    return qrcode.size;
 }
 
-// ─── Mode 0 – Text only ───────────────────────────────────────────────────
+// ─── Mode 0 – Text ───────────────────────────────────────────────────────────
 
 void BadgeApp::renderText(DisplayManager& display) {
     auto* stor = (_appManager && _appManager->context())
@@ -104,39 +147,41 @@ void BadgeApp::renderText(DisplayManager& display) {
     String status  = stor ? stor->getBadgeStatus()  : "Online";
     String tagline = stor ? stor->getBadgeTagline() : "";
 
+    // Status pill width: 6px per char + 10px padding, min 40
+    int pillW = max(40, (int)status.length() * 6 + 10);
+
     display.startFullWindowDraw();
     do {
         display.fillWhite();
         display.drawStatusBar();
         display.setTextBlack();
 
-        // Name in title font
+        // Name (title font, Y=baseline)
         display.setTitleFont();
-        display.drawText(5, 40, name.c_str());
+        display.drawText(MARGIN_X, TM_NAME_BL, name.c_str());
 
+        // Separator under name
+        display.fillRect(0, TM_SEP_Y, DISP_W, 1);
+
+        // Status pill (default font, Y=top of char)
         display.setDefaultFont();
+        display.drawRect(MARGIN_X, TM_BOX_Y, pillW, TM_BOX_H);
+        display.drawText(MARGIN_X + 4, TM_STAT_TY, status.c_str());
 
-        // Status badge
-        display.drawRect(4, 46, 8 * (int)status.length() + 6, 14);
-        display.drawText(7, 56, status.c_str());
-
-        // Tagline
+        // Tagline (default font, Y=top)
         if (!tagline.isEmpty()) {
-            display.drawText(5, 76, tagline.c_str());
+            display.drawText(MARGIN_X, TM_TAG_TY, tagline.c_str());
         }
 
-        // Mode indicator dots (filled = current, empty = other)
-        for (int i = 0; i < (int)Mode::COUNT; i++) {
-            int bx = 5 + i * 12;
-            if (i == (int)_mode) display.fillRect(bx, 94, 6, 6);
-            else                  display.drawRect(bx, 94, 6, 6);
-        }
+        // Mode dots
+        drawModeDots(display, MARGIN_X, TM_DOT_Y, (int)_mode);
 
-        display.drawText(5, HINT_Y, "Sel: cycle view   Back: exit");
+        // Hint
+        display.drawText(MARGIN_X, TM_HINT_TY, "Sel:view  Back:exit");
     } while (display.nextPage());
 }
 
-// ─── Mode 1 – QR + info side-by-side ─────────────────────────────────────
+// ─── Mode 1 – QR + info side-by-side ─────────────────────────────────────────
 
 void BadgeApp::renderQrSide(DisplayManager& display) {
     auto* stor = (_appManager && _appManager->context())
@@ -147,24 +192,13 @@ void BadgeApp::renderQrSide(DisplayManager& display) {
     String tagline = stor ? stor->getBadgeTagline() : "";
     String qrData  = stor ? stor->getBadgeQrData()  : "";
 
-    // Compute QR size at scale=2 so we know how to lay out the rest
-    // (we do this before the page loop; the page loop just re-draws)
+    // Build QR once before page loop
     QRCode  qrcode;
     uint8_t buf[qrcode_getBufferSize(MAX_QR_VER)];
-    bool    hasQr = false;
+    bool    hasQr = initQr(qrcode, buf, qrData);
 
-    if (!qrData.isEmpty()) {
-        for (uint8_t v = 1; v <= MAX_QR_VER; v++) {
-            if (qrcode_initText(&qrcode, buf, v, ECC_LOW, qrData.c_str())) {
-                hasQr = true; break;
-            }
-        }
-    }
-
-    constexpr int QR_SCALE = 2;
-    constexpr int QR_OX    = 3;
-    constexpr int QR_OY    = 23;   // just below status bar divider
-    int           textX    = hasQr ? (QR_OX + (int)qrcode.size * QR_SCALE + 6) : 5;
+    int qrPx  = hasQr ? (int)qrcode.size * QS_QR_SCALE : 0;
+    int textX = QS_QR_X + qrPx + QS_QR_GAP;
 
     display.startFullWindowDraw();
     do {
@@ -173,74 +207,63 @@ void BadgeApp::renderQrSide(DisplayManager& display) {
         display.setTextBlack();
 
         if (hasQr) {
-            for (uint8_t qy = 0; qy < qrcode.size; qy++) {
-                for (uint8_t qx = 0; qx < qrcode.size; qx++) {
-                    if (qrcode_getModule(&qrcode, qx, qy)) {
-                        display.fillRect(QR_OX + qx * QR_SCALE,
-                                         QR_OY + qy * QR_SCALE,
-                                         QR_SCALE, QR_SCALE);
-                    }
-                }
-            }
+            drawQrModules(display, qrcode, QS_QR_X, QS_QR_Y, QS_QR_SCALE);
         } else {
-            display.drawText(5, 44, "(no QR)");
-            display.drawText(5, 58, "Set in");
-            display.drawText(5, 70, "portal");
+            // Placeholder when no QR data
+            display.setDefaultFont();
+            display.drawRect(QS_QR_X, QS_QR_Y, 46, 46);
+            display.drawText(QS_QR_X + 5, QS_QR_Y + 14, "No QR");
+            display.drawText(QS_QR_X + 5, QS_QR_Y + 26, "Set in");
+            display.drawText(QS_QR_X + 5, QS_QR_Y + 36, "portal");
         }
 
-        // Info column
+        // Name (title font, Y=baseline)
         display.setTitleFont();
-        display.drawText(textX, 38, name.c_str());
+        display.drawText(textX, QS_NAME_BL, name.c_str());
 
+        // Status (default font, Y=top)
         display.setDefaultFont();
-        display.drawText(textX, 54, ("[ " + status + " ]").c_str());
+        display.drawText(textX, QS_STAT_TY, ("[ " + status + " ]").c_str());
 
+        // Tagline
         if (!tagline.isEmpty()) {
-            display.drawText(textX, 68, tagline.c_str());
+            display.drawText(textX, QS_TAG_TY, tagline.c_str());
         }
 
-        // Mode dots
-        for (int i = 0; i < (int)Mode::COUNT; i++) {
-            int bx = textX + i * 12;
-            if (i == (int)_mode) display.fillRect(bx, 82, 6, 6);
-            else                  display.drawRect(bx, 82, 6, 6);
-        }
+        // Mode dots (right column)
+        drawModeDots(display, textX, QS_DOT_Y, (int)_mode);
 
-        display.drawText(5, HINT_Y, "Sel: cycle view   Back: exit");
+        // Hint (full width, bottom)
+        display.drawText(MARGIN_X, QS_HINT_TY, "Sel:view  Back:exit");
     } while (display.nextPage());
 }
 
-// ─── Mode 2 – Full-screen QR ─────────────────────────────────────────────
+// ─── Mode 2 – Full-screen QR ─────────────────────────────────────────────────
 
 void BadgeApp::renderQrFull(DisplayManager& display) {
     auto* stor = (_appManager && _appManager->context())
                  ? _appManager->context()->storage : nullptr;
 
     String qrData = stor ? stor->getBadgeQrData() : "";
+    String name   = stor ? stor->getBadgeName()   : "Stealthy";
 
     QRCode  qrcode;
     uint8_t buf[qrcode_getBufferSize(MAX_QR_VER)];
-    bool    hasQr = false;
+    bool    hasQr = initQr(qrcode, buf, qrData);
 
-    if (!qrData.isEmpty()) {
-        for (uint8_t v = 1; v <= MAX_QR_VER; v++) {
-            if (qrcode_initText(&qrcode, buf, v, ECC_LOW, qrData.c_str())) {
-                hasQr = true; break;
-            }
-        }
-    }
-
-    // Auto-scale: fit QR in the shorter display dimension with a 2px margin
     int scale = 1;
-    if (hasQr && qrcode.size > 0) {
-        scale = (display.height() - 4) / qrcode.size;
-        if (scale < 1) scale = 1;
-        if (scale > 8) scale = 8;
-    }
+    int ox = 0, oy = 0;
 
-    int side = hasQr ? (int)qrcode.size * scale : 0;
-    int ox   = (display.width()  - side) / 2;
-    int oy   = (display.height() - side) / 2;
+    if (hasQr && qrcode.size > 0) {
+        // Auto-scale: fill height (leave 2px margin)
+        scale = (DISP_H - 4) / qrcode.size;
+        if (scale < 1) scale = 1;
+        if (scale > 3) scale = 3;  // cap so it doesn't look too blocky
+
+        int side = (int)qrcode.size * scale;
+        ox = (DISP_W - side) / 2;
+        oy = (DISP_H - side) / 2;
+    }
 
     display.startFullWindowDraw();
     do {
@@ -248,17 +271,13 @@ void BadgeApp::renderQrFull(DisplayManager& display) {
         display.setTextBlack();
 
         if (hasQr) {
-            for (uint8_t qy = 0; qy < qrcode.size; qy++) {
-                for (uint8_t qx = 0; qx < qrcode.size; qx++) {
-                    if (qrcode_getModule(&qrcode, qx, qy)) {
-                        display.fillRect(ox + qx * scale, oy + qy * scale, scale, scale);
-                    }
-                }
-            }
+            drawQrModules(display, qrcode, ox, oy, scale);
         } else {
             display.setDefaultFont();
-            display.drawText(8, 55, "No QR data set.");
-            display.drawText(8, 70, "Configure in portal.");
+            display.drawText(8, 48, "No QR data set.");
+            display.drawText(8, 60, "Open portal, Badge tab,");
+            display.drawText(8, 70, "enter QR Code Data.");
+            display.drawText(8, 82, "Sel:cycle  Back:exit");
         }
     } while (display.nextPage());
 }

@@ -77,6 +77,7 @@ String StorageManager::getBadgeQrData() const {
     if (!_available) return "";
     String v = _fileSystemDriver->readTextFile(QR_DATA_PATH);
     v.trim();
+    Serial.printf("[Storage] getBadgeQrData() -> '%s'\n", v.c_str());
     return v;
 }
 
@@ -94,7 +95,9 @@ bool StorageManager::setBadgeTagline(const String& tagline) {
 
 bool StorageManager::setBadgeQrData(const String& url) {
     if (!_available) return false;
-    return _fileSystemDriver->writeTextFile(QR_DATA_PATH, url + "\n");
+    bool ok = _fileSystemDriver->writeTextFile(QR_DATA_PATH, url + "\n");
+    Serial.printf("[Storage] setBadgeQrData('%s') -> %s\n", url.c_str(), ok ? "ok" : "FAILED");
+    return ok;
 }
 
 bool StorageManager::setBadgeMode(int mode) {

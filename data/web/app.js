@@ -134,9 +134,22 @@ document.getElementById('badge-form').addEventListener('submit', async e => {
   setBtn(btn, 'Save', false);
 
   if (data.ok) {
-    setFeedback(feedback, 'Saved.');
+    // Reload from device to confirm what was actually stored
     const topLabel = document.getElementById('badge-name-top');
-    if (topLabel) topLabel.textContent = name || 'stealthy';
+    const confirmed = await api('/api/settings');
+    if (confirmed.ok) {
+      if (topLabel) topLabel.textContent = confirmed.badgeName || 'stealthy';
+      document.getElementById('badge-name').value    = confirmed.badgeName    || '';
+      document.getElementById('badge-tagline').value = confirmed.badgeTagline || '';
+      document.getElementById('badge-qr').value      = confirmed.badgeQrData  || '';
+      const mval = String(confirmed.badgeMode ?? 0);
+      const modeSel = document.getElementById('badge-mode');
+      const mopt = [...modeSel.options].find(o => o.value === mval);
+      modeSel.value = mopt ? mopt.value : '0';
+      setFeedback(feedback, 'Saved.');
+    } else {
+      setFeedback(feedback, 'Saved (verify failed).', false);
+    }
   } else {
     setFeedback(feedback, 'Save failed.', true);
   }
@@ -301,27 +314,30 @@ function showRowFeedback(row, msg, isError = false) {
   setFeedback(fb, msg, isError);
 }
 
-// Inline confirm: replaces action buttons temporarily
+// Inline confirm: replaces action buttons temporarily.
+// Saves original DOM *nodes* (not innerHTML) so event listeners are preserved on restore.
 function showConfirm(row, msg) {
   return new Promise(resolve => {
     const actions = row.querySelector('.ir-actions') || row.querySelector('.file-actions');
     if (!actions) { resolve(true); return; }
 
-    const orig = actions.innerHTML;
+    // Keep live DOM references — event listeners survive the swap
+    const origNodes = Array.from(actions.children);
 
-    const label  = document.createElement('span');
+    const label = document.createElement('span');
     label.className = 'ir-sub';
     label.textContent = msg;
 
-    const yes = makeBtn('Yes', () => { actions.innerHTML = orig; reattach(); resolve(true); }, true);
-    const no  = makeBtn('No',  () => { actions.innerHTML = orig; reattach(); resolve(false); });
+    const restore = () => {
+      actions.innerHTML = '';
+      origNodes.forEach(n => actions.appendChild(n));
+    };
+
+    const yes = makeBtn('Yes', () => { restore(); resolve(true); }, true);
+    const no  = makeBtn('No',  () => { restore(); resolve(false); });
 
     actions.innerHTML = '';
     actions.append(label, yes, no);
-
-    function reattach() {
-      // No-op: caller rebuilds as needed
-    }
   });
 }
 
