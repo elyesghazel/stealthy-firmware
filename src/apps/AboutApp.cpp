@@ -1,6 +1,6 @@
 #include "AboutApp.h"
-#include "core/AppManager.h"
-#include "drivers/DisplayManager.h"
+#include "framework/AppManager.h"
+#include "display/DisplayManager.h"
 #include "AppInfo.h"
 
 AboutApp::AboutApp() {}

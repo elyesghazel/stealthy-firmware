@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../drivers/IrDriver.h"
+#include "ir/IrDriver.h"
 
 class IrManager {
 public:

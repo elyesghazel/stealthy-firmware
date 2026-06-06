@@ -1,6 +1,6 @@
 #include "SettingsApp.h"
-#include "core/AppManager.h"
-#include "drivers/DisplayManager.h"
+#include "framework/AppManager.h"
+#include "display/DisplayManager.h"
 
 namespace {
     constexpr int TITLE_X = 5;

@@ -1,6 +1,6 @@
 #pragma once
 #include <Arduino.h>
-#include "core/IApp.h"
+#include "framework/IApp.h"
 
 class ButtonManager {
 public:

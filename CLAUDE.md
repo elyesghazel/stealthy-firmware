@@ -29,16 +29,28 @@ No tests are currently implemented. The `/test/` directory exists but is empty.
 
 The firmware uses a **hierarchical app state machine** with a **service locator** (`AppContext`) injected into every app.
 
-### Layers
+### Source layout
+
+Code is organized by **domain** — each subsystem owns both its hardware driver and high-level manager in one folder:
 
 ```
-main.cpp → AppManager → [App] → AppContext → {Managers} → {Drivers} → Hardware
+src/
+├── main.cpp
+├── framework/   IApp interface, AppContext service locator, AppManager state machine
+├── display/     DisplayManager (GxEPD2 e-ink wrapper)
+├── input/       ButtonManager (debounce, long-press, event queue)
+├── power/       PowerManager (battery ADC, deep sleep)
+├── storage/     FileSystemDriver (LittleFS) + StorageManager (settings, IR files)
+├── ir/          IrDriver (hardware) + IrManager (capture/replay orchestration)
+├── led/         LedDriver (GPIO) + LedManager (animations state machine)
+├── portal/      PortalManager (captive portal AP, REST API, web UI)
+└── apps/        StartScreenApp, BadgeApp, MainMenuApp, SettingsApp,
+                 AboutApp, IrToolsApp, PortalApp
 ```
 
-- **`src/drivers/`** — Hardware abstraction: display (e-ink), buttons, LEDs, IR transceiver, filesystem (LittleFS)
-- **`src/core/`** — Higher-level managers: power, storage, IR, LED state machine, captive portal web server; plus `IApp` interface and `AppContext` service locator
-- **`src/apps/`** — 7 application modules: `StartScreenApp`, `BadgeApp`, `MainMenuApp`, `SettingsApp`, `AboutApp`, `IrToolsApp`, `PortalApp`
-- **`include/`** — Compile-time constants: product name/version (`AppInfo.h`), device settings (`DeviceSettings.h`)
+`include/` holds compile-time constants: `AppInfo.h` (name/version) and `DeviceSettings.h` (persisted user prefs).
+
+All `#include` paths are relative to `src/` (e.g. `"ir/IrManager.h"`, `"framework/IApp.h"`).
 
 ### App Lifecycle (`IApp` interface)
 

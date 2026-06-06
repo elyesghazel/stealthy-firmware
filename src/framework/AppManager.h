@@ -1,6 +1,6 @@
 #pragma once
-#include "core/IApp.h"
-#include "core/AppContext.h"
+#include "framework/IApp.h"
+#include "framework/AppContext.h"
 
 class AppManager {
 public:

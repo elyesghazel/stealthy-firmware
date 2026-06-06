@@ -1,7 +1,7 @@
 #include "BadgeApp.h"
-#include "core/AppManager.h"
-#include "drivers/DisplayManager.h"
-#include "../core/StorageManager.h"
+#include "framework/AppManager.h"
+#include "display/DisplayManager.h"
+#include "storage/StorageManager.h"
 
 BadgeApp::BadgeApp() {}
 

@@ -1,5 +1,5 @@
 #include "DisplayManager.h"
-#include "core/PowerManager.h"
+#include "power/PowerManager.h"
 
 #include <SPI.h>
 #include <GxEPD2_BW.h>

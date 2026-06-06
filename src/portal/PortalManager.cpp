@@ -4,10 +4,10 @@
 #include <LittleFS.h>
 #include <esp_wifi.h>
 
-#include "StorageManager.h"
-#include "IrManager.h"
-#include "PowerManager.h"
-#include "../drivers/IrDriver.h"
+#include "storage/StorageManager.h"
+#include "ir/IrManager.h"
+#include "power/PowerManager.h"
+#include "ir/IrDriver.h"
 
 PortalManager::PortalManager(StorageManager* storageManager, IrManager* irManager, PowerManager* powerManager)
     : _storageManager(storageManager),

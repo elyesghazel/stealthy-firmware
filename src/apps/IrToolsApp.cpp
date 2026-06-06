@@ -1,12 +1,12 @@
 #include "IrToolsApp.h"
-#include "../core/AppManager.h"
-#include "../core/AppContext.h"
-#include "../core/IrManager.h"
-#include "../core/StorageManager.h"
-#include "../drivers/DisplayManager.h"
-#include "../drivers/ButtonManager.h"
-#include "../core/LedManager.h"
-#include "../drivers/IrDriver.h"
+#include "framework/AppManager.h"
+#include "framework/AppContext.h"
+#include "ir/IrManager.h"
+#include "storage/StorageManager.h"
+#include "display/DisplayManager.h"
+#include "input/ButtonManager.h"
+#include "led/LedManager.h"
+#include "ir/IrDriver.h"
 #include <cstdio>
 
 namespace {

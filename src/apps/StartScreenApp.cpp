@@ -1,8 +1,8 @@
 #include "StartScreenApp.h"
-#include "../core/AppManager.h"
-#include "../core/AppContext.h"
-#include "../core/LedManager.h"
-#include "../drivers/DisplayManager.h"
+#include "framework/AppManager.h"
+#include "framework/AppContext.h"
+#include "led/LedManager.h"
+#include "display/DisplayManager.h"
 
 namespace {
     constexpr int TITLE_X = 6;

@@ -1,5 +1,5 @@
 #pragma once
-#include "core/IApp.h"
+#include "framework/IApp.h"
 #include "DeviceSettings.h"
 
 class AppManager;

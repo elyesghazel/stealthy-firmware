@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../core/IApp.h"
+#include "framework/IApp.h"
 #include <vector>
 #include <Arduino.h>
-#include "../core/StorageManager.h"
+#include "storage/StorageManager.h"
 
 class AppManager;
 class DisplayManager;

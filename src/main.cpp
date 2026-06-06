@@ -3,19 +3,19 @@
 #include <esp_system.h>
 
 
-#include "drivers/ButtonManager.h"
-#include "drivers/DisplayManager.h"
-#include "drivers/FileSystemDriver.h"
-#include "drivers/IrDriver.h"
-#include "drivers/LedDriver.h"
+#include "input/ButtonManager.h"
+#include "display/DisplayManager.h"
+#include "storage/FileSystemDriver.h"
+#include "ir/IrDriver.h"
+#include "led/LedDriver.h"
 
-#include "core/AppManager.h"
-#include "core/PowerManager.h"
-#include "core/StorageManager.h"
-#include "core/AppContext.h"
-#include "core/IrManager.h"
-#include "core/LedManager.h"
-#include "core/PortalManager.h"
+#include "framework/AppManager.h"
+#include "power/PowerManager.h"
+#include "storage/StorageManager.h"
+#include "framework/AppContext.h"
+#include "ir/IrManager.h"
+#include "led/LedManager.h"
+#include "portal/PortalManager.h"
 
 
 #include "DeviceSettings.h"

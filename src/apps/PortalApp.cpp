@@ -1,9 +1,9 @@
 #include "PortalApp.h"
-#include "../core/AppManager.h"
-#include "../core/AppContext.h"
-#include "../core/PortalManager.h"
-#include "../core/LedManager.h"
-#include "../drivers/DisplayManager.h"
+#include "framework/AppManager.h"
+#include "framework/AppContext.h"
+#include "portal/PortalManager.h"
+#include "led/LedManager.h"
+#include "display/DisplayManager.h"
 
 namespace {
     constexpr int TITLE_X = 5;

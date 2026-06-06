@@ -2,8 +2,8 @@
 
 #include <Arduino.h>
 #include <vector>
-#include "../drivers/FileSystemDriver.h"
-#include "../drivers/IrDriver.h"
+#include "storage/FileSystemDriver.h"
+#include "ir/IrDriver.h"
 
 struct IrSavedItem {
     int id = 0;

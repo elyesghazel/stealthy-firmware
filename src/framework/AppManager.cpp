@@ -1,5 +1,5 @@
 #include "AppManager.h"
-#include "drivers/DisplayManager.h"
+#include "display/DisplayManager.h"
 
 void AppManager::begin(IApp* initialApp, AppContext* context) {
     _currentApp = initialApp;
