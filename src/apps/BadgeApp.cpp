@@ -60,9 +60,11 @@ namespace {
     constexpr int HINT_TY  = 113;
 
     // QR — buffer MUST be a compile-time constant, not a VLA.
-    // qrcode_getBufferSize(4) = ((4*4+17)^2 + 7) / 8 = 136
+    // qrcode_getBufferSize(v) = ((v*4+17)^2 + 7) / 8
+    // v=1→56, v=2→79, v=3→106, v=4→137  (137, not 136!)
+    // qrcode_initText() returns 0 on success, negative on failure (C-style).
     constexpr uint8_t MAX_VER   = 4;
-    constexpr int     QR_BUF_SZ = 136;
+    constexpr int     QR_BUF_SZ = 137;
     constexpr int     QR_SCALE  = 3;
 }
 
@@ -127,10 +129,11 @@ void BadgeApp::render(DisplayManager& display) {
 
     if (!qrData.isEmpty()) {
         for (uint8_t v = 1; v <= MAX_VER; v++) {
-            bool ok = qrcode_initText(&qrcode, buf, v, ECC_LOW, qrData.c_str());
-            Serial.printf("[BadgeApp] QR v%d init=%d size=%d data='%s'\n",
-                          v, ok, ok ? qrcode.size : 0, qrData.c_str());
-            if (ok) { hasQr = true; break; }
+            // Returns 0 on success, negative on failure (C convention, not bool)
+            int8_t result = qrcode_initText(&qrcode, buf, v, ECC_LOW, qrData.c_str());
+            Serial.printf("[BadgeApp] QR v%d result=%d size=%d\n",
+                          v, result, result == 0 ? qrcode.size : 0);
+            if (result == 0) { hasQr = true; break; }
         }
     }
     Serial.printf("[BadgeApp] hasQr=%d\n", hasQr);
