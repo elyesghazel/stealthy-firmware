@@ -130,9 +130,18 @@ int MainMenuApp::rowTopY(int visibleRow) const {
 
 void MainMenuApp::drawRow(DisplayManager& display, int visibleRow, int itemIndex, bool selected) {
     int y = rowBaselineY(visibleRow);
-    display.setTextBlack();
-    display.drawText(MENU_CARET_X, y, selected ? ">" : " ");
-    display.drawText(MENU_TEXT_X,  y, _items[itemIndex]);
+    if (selected) {
+        // Inverted highlight bar: 2px above char top, 12px tall
+        display.fillRect(MENU_CARET_X - 2, y - 2, display.width() - (MENU_CARET_X - 2), 12);
+        display.setTextWhite();
+        display.drawText(MENU_CARET_X, y, ">");
+        display.drawText(MENU_TEXT_X,  y, _items[itemIndex]);
+        display.setTextBlack();
+    } else {
+        display.setTextBlack();
+        display.drawText(MENU_CARET_X, y, " ");
+        display.drawText(MENU_TEXT_X,  y, _items[itemIndex]);
+    }
 }
 
 void MainMenuApp::drawScrollIndicators(DisplayManager& display) {

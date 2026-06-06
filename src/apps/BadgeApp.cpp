@@ -35,28 +35,24 @@ namespace {
     constexpr int CONT_H  = 102;   // content height (122 - 20)
     constexpr int RIG_CY  = CONT_Y + CONT_H / 2;  // 20 + 51 = 71
 
-    // ── Left column vertical positions ────────────────────────────────────────
-    //  y=20: content starts
+    // ── Left column vertical positions (default font Y = top of char, 8px tall)
+    //  y=20: content starts (below status bar divider)
     //  y=24: name cap-top  (NAME_BL - 12)
     //  y=36: name baseline (title font)
-    //  y=39: name descent end
     //  y=41: horizontal rule (1 px)
-    //  y=43..54: status pill  (height 12)
-    //  y=45..52: status text  (default, 8 px, 2 px padding inside pill)
-    //  y=59..66: tagline      (default, 8 px)
-    //  y=72..79: battery line (default, 8 px)
-    //  y=83..90: IR count     (default, 8 px)
-    //  y=94..101: WiFi count  (default, 8 px)
-    //  y=113..120: hint       (default, 8 px)  ← 1 px from bottom edge
+    //  y=47: tagline top
+    //  y=59: battery top
+    //  y=71: IR captures top
+    //  y=83: WiFi SSIDs top
+    //  y=95: uptime top
+    //  y=113: hint top  (bottom at y=120, 1 px from screen edge)
     constexpr int NAME_BL  = 36;
     constexpr int RULE_Y   = 41;
-    constexpr int PILL_Y   = 43;
-    constexpr int PILL_H   = 12;
-    constexpr int STAT_TY  = 45;
-    constexpr int TAG_TY   = 59;
-    constexpr int BAT_TY   = 72;
-    constexpr int IR_TY    = 83;
-    constexpr int WIFI_TY  = 94;
+    constexpr int TAG_TY   = 47;
+    constexpr int BAT_TY   = 59;
+    constexpr int IR_TY    = 71;
+    constexpr int WIFI_TY  = 83;
+    constexpr int UP_TY    = 95;
     constexpr int HINT_TY  = 113;
 
     // QR — buffer MUST be a compile-time constant, not a VLA.
@@ -111,15 +107,18 @@ void BadgeApp::render(DisplayManager& display) {
     auto* stor = ctx ? ctx->storage : nullptr;
 
     String name    = stor ? stor->getBadgeName()    : "Stealthy";
-    String status  = stor ? stor->getBadgeStatus()  : "Online";
     String tagline = stor ? stor->getBadgeTagline() : "";
     String qrData  = stor ? stor->getBadgeQrData()  : "";
     float  voltage = (ctx && ctx->power) ? ctx->power->readBatteryVoltage() : 0.0f;
+    int    pct     = (ctx && ctx->power) ? ctx->power->batteryPercent()     : 0;
 
-    // Clamp to fit left column
-    // Title font ≈ 12 px/char; usable width = 154 - 4 = 150 → floor(150/12) = 12 chars
+    // Uptime
+    unsigned long upMs = millis();
+    int upH = (int)(upMs / 3600000UL);
+    int upM = (int)((upMs % 3600000UL) / 60000UL);
+
+    // Clamp to fit left column (title font ≈12px/char, default font 6px/char)
     if (name.length()    > 12) name    = name.substring(0, 12);
-    // Default font 6 px/char; usable = 150 → 25 chars
     if (tagline.length() > 25) tagline = tagline.substring(0, 25);
 
     // ── Build QR once, before the page loop ──────────────────────────────────
@@ -143,17 +142,16 @@ void BadgeApp::render(DisplayManager& display) {
     int qrOx = RIG_X + (RIG_W - qrPx) / 2;
     int qrOy = CONT_Y + (CONT_H - qrPx) / 2;
 
-    // Status pill width: 8 px padding + 6 px/char, clamped to column
-    int pillW = max(36, (int)status.length() * 6 + 8);
-    if (pillW > LEFT_W - MX - 2) pillW = LEFT_W - MX - 2;
-
-    // Info line strings (fixed-width label + value)
+    // Info line strings
     char batBuf[20];
     char irBuf[20];
     char wifiBuf[20];
-    snprintf(batBuf,  sizeof(batBuf),  "Bat  %.2fV",    voltage);
-    snprintf(irBuf,   sizeof(irBuf),   "IR   %d cap",   _irCount);
-    snprintf(wifiBuf, sizeof(wifiBuf), "WiFi %d SSID",  _ssidCount);
+    char upBuf[20];
+    snprintf(batBuf,  sizeof(batBuf),  "Bat  %.2fV (%d%%)", voltage, pct);
+    snprintf(irBuf,   sizeof(irBuf),   "IR   %d cap",       _irCount);
+    snprintf(wifiBuf, sizeof(wifiBuf), "WiFi %d SSID",      _ssidCount);
+    if (upH > 0) snprintf(upBuf, sizeof(upBuf), "Up   %dh %dm", upH, upM);
+    else         snprintf(upBuf, sizeof(upBuf), "Up   %dm",      upM);
 
     // ── Page loop ─────────────────────────────────────────────────────────────
     display.startFullWindowDraw();
@@ -164,19 +162,13 @@ void BadgeApp::render(DisplayManager& display) {
 
         // ── Left column ───────────────────────────────────────────────────────
 
-        // Name (title font, Y = baseline)
         display.setTitleFont();
         display.drawText(MX, NAME_BL, name.c_str());
 
-        // Switch back to default font for everything below
         display.setDefaultFont();
 
-        // Thin horizontal rule under name
+        // Thin separator under name
         display.fillRect(0, RULE_Y, LEFT_W, 1);
-
-        // Status pill with border
-        display.drawRect(MX, PILL_Y, pillW, PILL_H);
-        display.drawText(MX + 4, STAT_TY, status.c_str());
 
         // Tagline (omit if empty)
         if (!tagline.isEmpty())
@@ -186,6 +178,7 @@ void BadgeApp::render(DisplayManager& display) {
         display.drawText(MX, BAT_TY,  batBuf);
         display.drawText(MX, IR_TY,   irBuf);
         display.drawText(MX, WIFI_TY, wifiBuf);
+        display.drawText(MX, UP_TY,   upBuf);
 
         // Hint at bottom
         display.drawText(MX, HINT_TY, "Back: exit");
@@ -195,7 +188,6 @@ void BadgeApp::render(DisplayManager& display) {
 
         // ── Right column ─────────────────────────────────────────────────────
         if (hasQr) {
-            // Draw QR modules
             for (uint8_t qy = 0; qy < qrcode.size; qy++) {
                 for (uint8_t qx = 0; qx < qrcode.size; qx++) {
                     if (qrcode_getModule(&qrcode, qx, qy))
@@ -203,6 +195,12 @@ void BadgeApp::render(DisplayManager& display) {
                                          qrOy + qy * QR_SCALE,
                                          QR_SCALE, QR_SCALE);
                 }
+            }
+            // "[ scan ]" label below QR if there's room
+            int labelY = qrOy + qrPx + 4;
+            if (labelY + 8 <= 121) {
+                // centre "[ scan ]" (8 chars × 6px = 48px) in 94px column
+                display.drawText(RIG_X + (RIG_W - 48) / 2, labelY, "[ scan ]");
             }
         } else {
             drawLockBitmap(display, RIG_CX, RIG_CY);

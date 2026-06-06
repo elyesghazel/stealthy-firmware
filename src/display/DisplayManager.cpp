@@ -171,21 +171,37 @@ void DisplayManager::drawBatteryIcon(int x, int y, float voltage) {
 void DisplayManager::drawStatusBar() {
     setTextBlack();
 
-    // use the title font for the app name so it feels more deliberate
     setTitleFont();
-    drawText(4, 14, "Stealthy");
+    drawText(4, 14, "STEALTHY");
 
     float voltage = 0.0f;
+    int   pct     = 0;
     if (_powerManager) {
+        pct     = _powerManager->batteryPercent();
         voltage = _powerManager->readBatteryVoltage();
     }
+    if (pct < 0)   pct = 0;
+    if (pct > 100) pct = 100;
 
-    // battery icon only
-    drawBatteryIcon(width() - 24, 4, voltage);
+    // Rough time estimate — assumes ~8h total at 100% for typical badge battery
+    int minsLeft = (pct * 480) / 100;
+    char timeBuf[8];
+    if      (minsLeft >= 60) snprintf(timeBuf, sizeof(timeBuf), "~%dh",  minsLeft / 60);
+    else if (minsLeft >   0) snprintf(timeBuf, sizeof(timeBuf), "~%dm",  minsLeft);
+    else                     snprintf(timeBuf, sizeof(timeBuf), "LOW!");
 
-    // divider line
+    char pctBuf[6];
+    snprintf(pctBuf, sizeof(pctBuf), "%d%%", pct);
+
+    // Right side (right-to-left): [battery icon] [XX%] [~Xh]
+    // Battery icon body at x=228, tip at x=246, right edge at x=247
+    // "XX%"  (up to 4 chars = 24px) starting at x=202, right edge x=225
+    // "~Xh"  (up to 4 chars = 24px) starting at x=175, right edge x=198
+    setDefaultFont();
+    drawText(175, 6, timeBuf);
+    drawText(202, 6, pctBuf);
+    drawBatteryIcon(228, 5, voltage);
+
     fillRect(0, 19, width(), 1);
-
-    // switch back to default for content afterwards
     setDefaultFont();
 }
