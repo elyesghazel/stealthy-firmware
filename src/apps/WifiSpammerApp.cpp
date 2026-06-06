@@ -25,11 +25,7 @@ void WifiSpammerApp::setup(AppManager* appManager, IApp* returnApp) {
 void WifiSpammerApp::onEnter() {
     auto* ctx = _appManager ? _appManager->context() : nullptr;
 
-    // Stop portal if running – can't coexist
-    if (ctx && ctx->portal && ctx->portal->isRunning()) {
-        ctx->portal->stop();
-    }
-
+    // Portal stays running — spammer uses STA interface, portal uses AP
     // Load SSIDs from storage into the spammer
     if (ctx && ctx->storage && ctx->spammer) {
         auto ssids = ctx->storage->loadSpamSSIDs();

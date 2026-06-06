@@ -1,6 +1,7 @@
 #include "WifiDeauthApp.h"
 #include "framework/AppManager.h"
 #include "framework/AppContext.h"
+#include "wifi/WifiKarma.h"
 #include "display/DisplayManager.h"
 #include "wifi/WifiDeauth.h"
 #include "wifi/WifiSpammer.h"
@@ -31,14 +32,12 @@ void WifiDeauthApp::setup(AppManager* appManager, IApp* returnApp) {
 void WifiDeauthApp::onEnter() {
     auto* ctx = _appManager ? _appManager->context() : nullptr;
 
-    // Stop portal if running before we change WiFi mode
-    if (ctx && ctx->portal && ctx->portal->isRunning()) {
-        ctx->portal->stop();
-    }
-    // Stop spammer if running
-    if (ctx && ctx->spammer && ctx->spammer->isRunning()) {
+    // Stop spammer if running (mutually exclusive with deauth)
+    if (ctx && ctx->spammer && ctx->spammer->isRunning())
         ctx->spammer->stop();
-    }
+    // Stop karma sniff if running (shares promiscuous mode with deauth)
+    if (ctx && ctx->karma && ctx->karma->isSniffing())
+        ctx->karma->stopSniff();
 
     _state       = State::Scanning;
     _scanFrames  = 0;
@@ -95,7 +94,9 @@ void WifiDeauthApp::handleButton(const ButtonEvent& event) {
     }
     if (event.id == ButtonId::Select && event.action == ButtonAction::Press) {
         if (deauth->startDeauth(_selectedIdx)) {
-            _state = State::Attacking;
+            _state          = State::Attacking;
+            _attackStartMs  = millis();
+            _lastRenderMs   = 0;
             if (ctx && ctx->leds) ctx->leds->showIrTransmit();
             requestFullRender();
         }
@@ -103,20 +104,30 @@ void WifiDeauthApp::handleButton(const ButtonEvent& event) {
 }
 
 void WifiDeauthApp::update() {
-    if (_state != State::Scanning) return;
+    if (_state == State::Scanning) {
+        _scanFrames++;
+        if (_scanFrames < 3) return; // wait for "Scanning..." to render first
 
-    _scanFrames++;
-    if (_scanFrames < 3) return; // wait for "Scanning..." to render first
+        auto* ctx    = _appManager ? _appManager->context() : nullptr;
+        auto* deauth = (ctx && ctx->deauth) ? ctx->deauth : nullptr;
 
-    auto* ctx    = _appManager ? _appManager->context() : nullptr;
-    auto* deauth = (ctx && ctx->deauth) ? ctx->deauth : nullptr;
+        if (deauth) deauth->scan(); // blocking ~3-5s
 
-    if (deauth) deauth->scan(); // blocking ~3-5s
+        _state       = State::SelectTarget;
+        _selectedIdx = 0;
+        _scrollOffset = 0;
+        requestFullRender();
+        return;
+    }
 
-    _state       = State::SelectTarget;
-    _selectedIdx = 0;
-    _scrollOffset = 0;
-    requestFullRender();
+    if (_state == State::Attacking) {
+        // Partial re-render every 2 s to show live frame / EAPOL counts
+        uint32_t now = millis();
+        if (now - _lastRenderMs >= 2000) {
+            _lastRenderMs = now;
+            requestPartialRender();
+        }
+    }
 }
 
 void WifiDeauthApp::render(DisplayManager& display) {
@@ -214,13 +225,31 @@ void WifiDeauthApp::drawContent(DisplayManager& display) {
     if (_state == State::Attacking) {
         auto* ctx    = _appManager ? _appManager->context() : nullptr;
         auto* deauth = (ctx && ctx->deauth) ? ctx->deauth : nullptr;
-        String target = deauth ? deauth->getTargetSsid() : "?";
-        if (target.length() > 20) target = target.substring(0, 20);
 
-        display.drawText(TEXT_X, L1_Y, "Deauthing:");
-        display.drawText(TEXT_X, L2_Y, target.c_str());
-        display.drawText(TEXT_X, L3_Y, "Sending frames...");
-        display.drawText(TEXT_X, L4_Y, "Back = stop");
+        String target = deauth ? deauth->getTargetSsid() : "?";
+        if (target.isEmpty()) target = "(hidden)";
+        if (target.length() > 21) target = target.substring(0, 21);
+
+        int frames = deauth ? deauth->getFramesSent() : 0;
+        int eapol  = deauth ? deauth->getEapolCount()  : 0;
+
+        uint32_t elapsed = (millis() - _attackStartMs) / 1000;
+        char elapsedBuf[10];
+        if (elapsed >= 60) snprintf(elapsedBuf, sizeof(elapsedBuf), "%dm%ds", (int)(elapsed/60), (int)(elapsed%60));
+        else                snprintf(elapsedBuf, sizeof(elapsedBuf), "%ds",    (int)elapsed);
+
+        char framesBuf[22];
+        char eapolBuf[22];
+        snprintf(framesBuf, sizeof(framesBuf), "Frames: %d", frames);
+        snprintf(eapolBuf,  sizeof(eapolBuf),  "EAPOL:  %d", eapol);
+
+        char bottomBuf[28];
+        snprintf(bottomBuf, sizeof(bottomBuf), "%s   Back=stop", elapsedBuf);
+
+        display.drawText(TEXT_X, L1_Y, target.c_str());
+        display.drawText(TEXT_X, L2_Y, framesBuf);
+        display.drawText(TEXT_X, L3_Y, eapolBuf);
+        display.drawText(TEXT_X, L4_Y, bottomBuf);
     }
 }
 

@@ -6,10 +6,12 @@
 class StorageManager;
 class IrManager;
 class PowerManager;
+class WifiKarma;
 
 class PortalManager {
 public:
-    PortalManager(StorageManager* storageManager, IrManager* irManager, PowerManager* powerManager);
+    PortalManager(StorageManager* storageManager, IrManager* irManager,
+                  PowerManager* powerManager, WifiKarma* karmaManager);
     bool begin();
     void stop();
     void update();
@@ -34,7 +36,7 @@ private:
     void handleApiIrSend();
     void handleApiIrRename();
     void handleApiIrDelete();
-    void handleApiIrImport();   // Flipper Zero .ir file import
+    void handleApiIrImport();
 
     void handleApiWifiSsidsGet();
     void handleApiWifiSsidsPost();
@@ -45,12 +47,21 @@ private:
     void handleApiFileUpload();
     void handleApiFileDelete();
 
+    void handleApiKarmaProbes();
+    void handleApiKarmaStartSniff();
+    void handleApiKarmaStopSniff();
+    void handleApiKarmaStart();
+    void handleApiKarmaStop();
+    void handleApiKarmaStatus();
+    void handleApiKarmaClear();
+
     String contentTypeForPath(const String& path) const;
     bool   serveFile(const char* path);
 
     StorageManager* _storageManager = nullptr;
     IrManager*      _irManager      = nullptr;
     PowerManager*   _powerManager   = nullptr;
+    WifiKarma*      _karmaManager   = nullptr;
 
     DNSServer  _dnsServer;
     WebServer  _server;

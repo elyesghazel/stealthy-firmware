@@ -8,11 +8,14 @@
 #include "ir/IrManager.h"
 #include "power/PowerManager.h"
 #include "ir/IrDriver.h"
+#include "wifi/WifiKarma.h"
 
-PortalManager::PortalManager(StorageManager* storageManager, IrManager* irManager, PowerManager* powerManager)
+PortalManager::PortalManager(StorageManager* storageManager, IrManager* irManager,
+                             PowerManager* powerManager, WifiKarma* karmaManager)
     : _storageManager(storageManager),
       _irManager(irManager),
       _powerManager(powerManager),
+      _karmaManager(karmaManager),
       _server(80) {
 }
 
@@ -57,7 +60,8 @@ bool PortalManager::begin() {
 
     Serial.println("[Portal] starting...");
     Serial.flush();
-    WiFi.mode(WIFI_AP);
+    // AP_STA: portal AP coexists with STA-based tools (deauth, spammer, karma)
+    WiFi.mode(WIFI_AP_STA);
 
     Serial.flush();
     bool apOk = WiFi.softAP(AP_SSID);
@@ -165,6 +169,14 @@ void PortalManager::setupRoutes() {
         },
         [this]() { handleApiFileUpload(); }
     );
+
+    _server.on("/api/karma/probes",      HTTP_GET,  [this]() { handleApiKarmaProbes();     });
+    _server.on("/api/karma/start-sniff", HTTP_POST, [this]() { handleApiKarmaStartSniff();  });
+    _server.on("/api/karma/stop-sniff",  HTTP_POST, [this]() { handleApiKarmaStopSniff();   });
+    _server.on("/api/karma/start",       HTTP_POST, [this]() { handleApiKarmaStart();       });
+    _server.on("/api/karma/stop",        HTTP_POST, [this]() { handleApiKarmaStop();        });
+    _server.on("/api/karma/status",      HTTP_GET,  [this]() { handleApiKarmaStatus();      });
+    _server.on("/api/karma/clear",       HTTP_POST, [this]() { handleApiKarmaClear();       });
 
     _server.onNotFound([this]() {
         if (!serveFile("/web/index.html")) {
@@ -595,6 +607,112 @@ void PortalManager::handleApiFileDelete() {
     }
     bool ok = LittleFS.remove(path);
     _server.send(200, "application/json", ok ? "{\"ok\":true}" : "{\"ok\":false}");
+}
+
+// ─── Karma / Probe handlers ───────────────────────────────────────────────────
+
+void PortalManager::handleApiKarmaProbes() {
+    if (!_karmaManager) {
+        _server.send(500, "application/json", "{\"ok\":false}");
+        return;
+    }
+
+    auto probes = _karmaManager->getProbes();
+
+    String json = "{\"ok\":true,\"probes\":[";
+    for (size_t i = 0; i < probes.size(); i++) {
+        String ssid = probes[i].ssid;
+        ssid.replace("\\", "\\\\");
+        ssid.replace("\"", "\\\"");
+
+        char macStr[18];
+        snprintf(macStr, sizeof(macStr), "%02X:%02X:%02X:%02X:%02X:%02X",
+            probes[i].mac[0], probes[i].mac[1], probes[i].mac[2],
+            probes[i].mac[3], probes[i].mac[4], probes[i].mac[5]);
+
+        json += "{";
+        json += "\"ssid\":\"" + ssid + "\",";
+        json += "\"count\":" + String(probes[i].count) + ",";
+        json += "\"rssi\":"  + String(probes[i].rssi)  + ",";
+        json += "\"mac\":\""  + String(macStr) + "\"";
+        json += "}";
+        if (i + 1 < probes.size()) json += ",";
+    }
+    json += "]}";
+    _server.send(200, "application/json", json);
+}
+
+void PortalManager::handleApiKarmaStartSniff() {
+    if (!_karmaManager) {
+        _server.send(500, "application/json", "{\"ok\":false}");
+        return;
+    }
+    _karmaManager->startSniff();
+    _server.send(200, "application/json", "{\"ok\":true}");
+}
+
+void PortalManager::handleApiKarmaStopSniff() {
+    if (!_karmaManager) {
+        _server.send(500, "application/json", "{\"ok\":false}");
+        return;
+    }
+    _karmaManager->stopSniff();
+    _server.send(200, "application/json", "{\"ok\":true}");
+}
+
+void PortalManager::handleApiKarmaStart() {
+    if (!_karmaManager) {
+        _server.send(500, "application/json", "{\"ok\":false}");
+        return;
+    }
+    String ssid = _server.arg("ssid");
+    ssid.trim();
+    if (ssid.isEmpty()) {
+        _server.send(400, "application/json", "{\"ok\":false,\"error\":\"missing_ssid\"}");
+        return;
+    }
+    bool ok = _karmaManager->startKarma(ssid);
+    _server.send(200, "application/json", ok ? "{\"ok\":true}" : "{\"ok\":false}");
+}
+
+void PortalManager::handleApiKarmaStop() {
+    if (!_karmaManager) {
+        _server.send(500, "application/json", "{\"ok\":false}");
+        return;
+    }
+    _karmaManager->stopKarma();
+    _server.send(200, "application/json", "{\"ok\":true}");
+}
+
+void PortalManager::handleApiKarmaStatus() {
+    if (!_karmaManager) {
+        _server.send(500, "application/json", "{\"ok\":false}");
+        return;
+    }
+    bool    sniffing = _karmaManager->isSniffing();
+    bool    karma    = _karmaManager->isKarmaRunning();
+    String  ssid     = _karmaManager->getKarmaSsid();
+    int     probes   = _karmaManager->getProbeCount();
+
+    ssid.replace("\\", "\\\\");
+    ssid.replace("\"", "\\\"");
+
+    String json = "{\"ok\":true,";
+    json += "\"sniffing\":"  + String(sniffing ? "true" : "false") + ",";
+    json += "\"karma\":"     + String(karma    ? "true" : "false") + ",";
+    json += "\"karmaSsid\":\"" + ssid + "\",";
+    json += "\"probeCount\":" + String(probes);
+    json += "}";
+    _server.send(200, "application/json", json);
+}
+
+void PortalManager::handleApiKarmaClear() {
+    if (!_karmaManager) {
+        _server.send(500, "application/json", "{\"ok\":false}");
+        return;
+    }
+    _karmaManager->clearProbes();
+    _server.send(200, "application/json", "{\"ok\":true}");
 }
 
 String PortalManager::contentTypeForPath(const String& path) const {

@@ -7,131 +7,182 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<div class="shell">
-  <div class="noise"></div>
+<div id="toast-container"></div>
 
-  <header class="topbar">
-    <div class="topbar-left">
-      <span class="prompt">root@stealthy</span><span class="topbar-sep">:~#</span>
-      <span class="topbar-label" id="badge-name-top">stealthy</span>
-    </div>
-    <div class="topbar-right">
-      <span class="battery-val" id="battery-top">-- V</span>
-      <span class="status-led" id="status-led" title="portal active"></span>
-    </div>
-  </header>
+<header class="header">
+  <span class="brand">STEALTHY</span>
+  <div class="header-right">
+    <span class="battery-display" id="battery-display">--</span>
+    <span class="status-dot"></span>
+  </div>
+</header>
 
-  <nav class="tabs" role="tablist">
-    <button class="tab active" data-tab="system"    role="tab" aria-selected="true">System</button>
-    <button class="tab"        data-tab="badge"     role="tab">Badge</button>
-    <button class="tab"        data-tab="ir-lib"    role="tab">IR Library</button>
-    <button class="tab"        data-tab="ir-upload" role="tab">IR Upload</button>
-    <button class="tab"        data-tab="wifi"      role="tab">WiFi Tools</button>
-  </nav>
+<nav class="nav" role="tablist">
+  <button class="nav-tab active" data-tab="system"    role="tab">System</button>
+  <button class="nav-tab"        data-tab="badge"     role="tab">Badge</button>
+  <button class="nav-tab"        data-tab="ir-lib"    role="tab">IR Library</button>
+  <button class="nav-tab"        data-tab="ir-upload" role="tab">IR Upload</button>
+  <button class="nav-tab"        data-tab="flood"     role="tab">Flood</button>
+  <button class="nav-tab"        data-tab="recon"     role="tab">Recon</button>
+</nav>
 
-  <main class="content">
+<main class="main">
 
-    <!-- ── System ─────────────────────────────────────── -->
-    <div class="pane active" id="pane-system">
-      <div class="stat-grid">
-        <div class="stat-card">
-          <span class="stat-label">Battery</span>
-          <strong class="stat-val" id="sys-battery">--</strong>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label">Portal</span>
-          <strong class="stat-val accent" id="sys-status">active</strong>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label">SSID</span>
-          <strong class="stat-val" id="sys-ssid">--</strong>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label">IP</span>
-          <strong class="stat-val" id="sys-ip">--</strong>
-        </div>
+  <!-- ── System ────────────────────────────────────────────── -->
+  <div class="pane active" id="pane-system">
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-label">Battery</div>
+        <div class="card-value" id="sys-battery">--</div>
       </div>
-      <p class="note">Keep device charged for stable Wi-Fi. Battery reading may fluctuate under load.</p>
-    </div>
-
-    <!-- ── Badge ──────────────────────────────────────── -->
-    <div class="pane" id="pane-badge">
-      <form id="badge-form" class="form" novalidate>
-        <label class="field">
-          <span class="field-label">Badge Name</span>
-          <input id="badge-name" type="text" maxlength="32" autocomplete="off"
-                 placeholder="e.g. stealthy-unit-07">
-        </label>
-        <label class="field">
-          <span class="field-label">Status</span>
-          <select id="badge-status">
-            <option value="Online">Online</option>
-            <option value="Busy">Busy</option>
-            <option value="Away">Away</option>
-            <option value="Offline">Offline</option>
-          </select>
-        </label>
-        <label class="field">
-          <span class="field-label">Tagline <span class="field-hint">shown below status on device</span></span>
-          <input id="badge-tagline" type="text" maxlength="64" autocomplete="off"
-                 placeholder="Security researcher · maker · hacker">
-        </label>
-        <label class="field">
-          <span class="field-label">QR Code Data <span class="field-hint">URL or any text, max 78 chars</span></span>
-          <input id="badge-qr" type="text" maxlength="200" autocomplete="off"
-                 placeholder="https://your-link.com">
-        </label>
-        <button type="submit" class="btn-primary" id="badge-save-btn">Save</button>
-        <div class="inline-feedback" id="badge-feedback" aria-live="polite"></div>
-      </form>
-      <p class="note top-gap">QR data is shown live on the device. Keep URLs short (under 60 chars) for best scan results.</p>
-    </div>
-
-    <!-- ── IR Library ─────────────────────────────────── -->
-    <div class="pane" id="pane-ir-lib">
-      <div class="list" id="ir-list">
-        <div class="list-placeholder">Loading captures…</div>
+      <div class="card">
+        <div class="card-label">Portal</div>
+        <div class="card-value ok" id="sys-status">active</div>
+      </div>
+      <div class="card">
+        <div class="card-label">AP SSID</div>
+        <div class="card-value dim" id="sys-ssid">--</div>
+      </div>
+      <div class="card">
+        <div class="card-label">IP</div>
+        <div class="card-value dim" id="sys-ip">--</div>
       </div>
     </div>
+    <p class="note">Portal runs in AP+STA mode — WiFi tools stay active without disconnecting you.</p>
+  </div>
 
-    <!-- ── IR Upload ──────────────────────────────────── -->
-    <div class="pane" id="pane-ir-upload">
-      <div class="drop-zone" id="drop-zone" role="button" tabindex="0"
-           aria-label="Drop .ir files here or click to browse">
-        <div class="drop-icon">↑</div>
-        <div class="drop-text">Drop <code>.ir</code> files here</div>
-        <div class="drop-sub">or click to browse</div>
-        <input type="file" id="upload-input" accept=".ir" multiple hidden>
+  <!-- ── Badge ─────────────────────────────────────────────── -->
+  <div class="pane" id="pane-badge">
+    <form id="badge-form" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="badge-name">Badge Name</label>
+        <input id="badge-name" type="text" class="input" maxlength="32"
+               autocomplete="off" placeholder="stealthy-unit-01">
       </div>
-      <div class="progress-wrap hidden" id="upload-progress-wrap">
+      <div class="form-group">
+        <label class="form-label" for="badge-status">Status</label>
+        <select id="badge-status" class="input">
+          <option value="Online">Online</option>
+          <option value="Busy">Busy</option>
+          <option value="Away">Away</option>
+          <option value="Offline">Offline</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="badge-tagline">
+          Tagline <span class="label-hint">shown on badge screen below name</span>
+        </label>
+        <input id="badge-tagline" type="text" class="input" maxlength="64"
+               autocomplete="off" placeholder="security researcher · maker">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="badge-qr">
+          QR Code <span class="label-hint">URL or text · keep under 60 chars for best scan</span>
+        </label>
+        <input id="badge-qr" type="text" class="input" maxlength="200"
+               autocomplete="off" placeholder="https://example.com">
+      </div>
+      <button type="submit" class="btn btn-primary" id="badge-save-btn">Save</button>
+    </form>
+  </div>
+
+  <!-- ── IR Library ────────────────────────────────────────── -->
+  <div class="pane" id="pane-ir-lib">
+    <div class="list" id="ir-list">
+      <div class="list-empty">Loading…</div>
+    </div>
+  </div>
+
+  <!-- ── IR Upload ─────────────────────────────────────────── -->
+  <div class="pane" id="pane-ir-upload">
+    <div class="drop-zone" id="drop-zone" role="button" tabindex="0"
+         aria-label="Drop .ir files or click to browse">
+      <div class="drop-icon">↑</div>
+      <div class="drop-label">Drop <code>.ir</code> files or click to browse</div>
+      <div class="drop-hint">Flipper Zero format · click Import to parse signals into IR Library</div>
+      <input type="file" id="upload-input" accept=".ir" multiple hidden>
+    </div>
+    <div class="progress-wrap hidden" id="upload-progress-wrap">
+      <div class="progress-track">
         <div class="progress-bar" id="upload-progress-bar"></div>
-        <span class="progress-label" id="upload-progress-label">0%</span>
       </div>
-      <div class="inline-feedback" id="upload-feedback" aria-live="polite"></div>
-      <h3 class="section-label">Uploaded files <span class="muted">(/ir/uploads)</span></h3>
-      <p class="note">Flipper Zero <code>.ir</code> files: click <strong>Import to Library</strong> to parse all signals into the IR Library.</p>
-      <div class="list" id="upload-list">
-        <div class="list-placeholder">Loading…</div>
-      </div>
+      <span class="progress-label" id="upload-progress-label">0%</span>
     </div>
 
-    <!-- ── WiFi Tools ─────────────────────────────────── -->
-    <div class="pane" id="pane-wifi">
-      <h3 class="section-label">Beacon Flood — SSID List</h3>
-      <p class="note">One network name per line. Max 20. Start/stop from the device menu.</p>
-      <textarea id="ssid-textarea" class="ssid-area" rows="8"
-                placeholder="FreeWifi&#10;OpenNetwork&#10;FBI Surveillance Van&#10;…"></textarea>
-      <div class="row-actions">
-        <button class="btn-primary" id="ssid-save-btn">Save SSIDs</button>
-        <span class="stat-badge" id="ssid-count-badge">0 SSIDs</span>
+    <div class="section-header" style="margin-top:18px">
+      <h2 class="section-title">Uploaded Files <span class="text-muted" style="font-weight:400;font-size:.82rem">/ir/uploads</span></h2>
+    </div>
+    <div class="list" id="upload-list">
+      <div class="list-empty">Loading…</div>
+    </div>
+  </div>
+
+  <!-- ── Flood ─────────────────────────────────────────────── -->
+  <div class="pane" id="pane-flood">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title">Beacon Flood</h2>
+        <p class="text-muted" style="font-size:.82rem;margin-top:3px">One SSID per line · max 20 · start/stop on the device</p>
       </div>
-      <div class="inline-feedback" id="wifi-feedback" aria-live="polite"></div>
-      <p class="note top-gap">WiFi deauth target selection is done on the device display.</p>
+    </div>
+    <textarea id="ssid-textarea" class="input textarea" rows="9"
+              placeholder="FreeWifi&#10;FBI Surveillance Van&#10;NSA Mobile Unit&#10;Definitely Not A Trap&#10;…"></textarea>
+    <div class="row">
+      <button class="btn btn-primary" id="ssid-save-btn">Save SSIDs</button>
+      <span class="badge" id="ssid-count-badge">0 SSIDs</span>
+    </div>
+  </div>
+
+  <!-- ── Recon ─────────────────────────────────────────────── -->
+  <div class="pane" id="pane-recon">
+
+    <!-- Probe Sniffer -->
+    <div class="section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Probe Sniffer</h2>
+          <p class="text-muted" style="font-size:.82rem;margin-top:3px">
+            Passively captures 802.11 probe requests — reveals saved networks of nearby devices
+          </p>
+        </div>
+        <div class="row gap-8" style="margin-top:0;flex-wrap:nowrap">
+          <button id="sniff-toggle-btn" class="btn btn-primary">Start</button>
+          <button id="clear-probes-btn" class="btn">Clear</button>
+        </div>
+      </div>
+      <div id="probe-status" class="status-line">Not sniffing · sniffs on current AP channel only</div>
+      <table class="table" id="probe-table">
+        <thead>
+          <tr>
+            <th>SSID</th>
+            <th class="text-right">Probes</th>
+            <th class="text-right">Signal</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="probe-tbody">
+          <tr><td colspan="4" class="table-empty">No probes captured yet</td></tr>
+        </tbody>
+      </table>
     </div>
 
-  </main>
-</div>
+    <!-- Karma AP -->
+    <div class="section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Karma AP</h2>
+          <p class="text-muted" style="font-size:.82rem;margin-top:3px">
+            Clone a network SSID as an open AP — devices auto-connect and hit the captive portal
+          </p>
+        </div>
+        <button id="karma-stop-btn" class="btn btn-danger hidden">Stop Karma</button>
+      </div>
+      <div id="karma-status" class="status-line">No karma active — click Karma on a probe entry above</div>
+    </div>
 
+  </div>
+
+</main>
 <script src="/app.js"></script>
 </body>
 </html>

@@ -17,6 +17,7 @@
 #include "portal/PortalManager.h"
 #include "wifi/WifiSpammer.h"
 #include "wifi/WifiDeauth.h"
+#include "wifi/WifiKarma.h"
 
 #include "DeviceSettings.h"
 
@@ -52,9 +53,10 @@ AppManager     appManager;
 IrManager      irManager(&irDriver);
 LedManager     ledManager(&ledDriver);
 ButtonManager  buttonManager(PIN_BTN_UP, PIN_BTN_DOWN, PIN_BTN_SELECT, PIN_BTN_BACK);
-PortalManager  portalManager(&storageManager, &irManager, &powerManager);
 WifiSpammer    wifiSpammer;
 WifiDeauth     wifiDeauth;
+WifiKarma      wifiKarma;
+PortalManager  portalManager(&storageManager, &irManager, &powerManager, &wifiKarma);
 
 DeviceSettings deviceSettings;
 
@@ -117,6 +119,7 @@ void setup() {
     appContext.portal   = &portalManager;
     appContext.spammer  = &wifiSpammer;
     appContext.deauth   = &wifiDeauth;
+    appContext.karma    = &wifiKarma;
 
     initFileSystem();
 

@@ -9,6 +9,7 @@ class LedManager;
 class PortalManager;
 class WifiSpammer;
 class WifiDeauth;
+class WifiKarma;
 
 struct AppContext {
     DisplayManager* display  = nullptr;
@@ -20,4 +21,5 @@ struct AppContext {
     PortalManager*  portal   = nullptr;
     WifiSpammer*    spammer  = nullptr;
     WifiDeauth*     deauth   = nullptr;
+    WifiKarma*      karma    = nullptr;
 };

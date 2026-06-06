@@ -1,4 +1,5 @@
 #pragma once
+#include <Arduino.h>
 #include "framework/IApp.h"
 
 class AppManager;
@@ -34,10 +35,12 @@ private:
     AppManager* _appManager = nullptr;
     IApp*       _returnApp  = nullptr;
 
-    State _state        = State::Scanning;
-    int   _scanFrames   = 0;
-    int   _selectedIdx  = 0;
-    int   _scrollOffset = 0;
+    State    _state        = State::Scanning;
+    int      _scanFrames   = 0;
+    int      _selectedIdx  = 0;
+    int      _scrollOffset = 0;
+    uint32_t _attackStartMs  = 0;
+    uint32_t _lastRenderMs   = 0;
 
     bool _needsRender = true;
     bool _fullRender  = true;

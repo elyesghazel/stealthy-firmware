@@ -22,7 +22,12 @@ bool WifiSpammer::begin() {
         return false;
     }
 
-    WiFi.mode(WIFI_STA);
+    // Ensure STA is available without killing a running AP (portal)
+    wifi_mode_t mode = WIFI_MODE_NULL;
+    esp_wifi_get_mode(&mode);
+    if (mode == WIFI_MODE_NULL)    WiFi.mode(WIFI_STA);
+    else if (mode == WIFI_MODE_AP) WiFi.mode(WIFI_AP_STA);
+
     esp_wifi_set_channel(6, WIFI_SECOND_CHAN_NONE);
 
     _running = true;

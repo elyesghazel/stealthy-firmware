@@ -413,43 +413,14 @@ std::vector<IrUploadSignal> StorageManager::loadIrUploadFile(const String& filen
     String text = _fileSystemDriver->readTextFile(path.c_str());
     if (text.isEmpty()) return signals;
 
-    // Split on "---\n" or "---" at line boundaries
-    int start = 0;
-    while (start < (int)text.length()) {
-        int sep = text.indexOf("\n---", start);
-        String block;
-        if (sep < 0) {
-            block = text.substring(start);
-            start = text.length();
-        } else {
-            block = text.substring(start, sep);
-            start = sep + 4; // skip "\n---"
-            // skip optional \n after separator
-            if (start < (int)text.length() && text[start] == '\n') start++;
-        }
-
-        block.trim();
-        if (block.isEmpty()) continue;
-
-        IrUploadSignal sig;
-        sig.name = extractValue(block, "name");
-        if (sig.name.isEmpty()) sig.name = "Signal";
-
-        // Remove the name line before deserializing capture
-        String captureBlock = block;
-        int nameLine = captureBlock.indexOf("name=");
-        if (nameLine >= 0) {
-            int nameEnd = captureBlock.indexOf('\n', nameLine);
-            if (nameEnd >= 0)
-                captureBlock = captureBlock.substring(0, nameLine)
-                             + captureBlock.substring(nameEnd + 1);
-            else
-                captureBlock = captureBlock.substring(0, nameLine);
-        }
-
-        if (deserializeIrCapture(captureBlock, sig.capture)) {
-            signals.push_back(sig);
-        }
+    // Parse as Flipper Zero .ir format directly — no Import step needed
+    auto parsed = FlipperIrParser::parse(text);
+    for (auto& sig : parsed) {
+        if (!sig.capture.valid) continue;
+        IrUploadSignal out;
+        out.name    = sig.name;
+        out.capture = sig.capture;
+        signals.push_back(out);
     }
     return signals;
 }

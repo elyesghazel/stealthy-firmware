@@ -106,39 +106,70 @@ bool FlipperIrParser::parseParsed(const String& proto, const String& addrStr,
 
     uint64_t value = 0;
 
+    // sendNEC / sendSAMSUNG / sendJVC use sendGeneric(MSBfirst=true), but
+    // these protocols transmit each byte LSB-first on the wire.  Their
+    // encode functions therefore pre-reverse each byte (or the full word
+    // for JVC) before handing the value to sendGeneric.  We must do the
+    // same so that IrCapture.value matches what the decoder would return.
+    //
+    // sendSony also uses MSBfirst=true, but encodeSony reverses the *whole*
+    // bit-word (not per-byte), so SIRC needs reverseBits(result, nbits).
+    //
+    // RC5/RC6 use biphase / custom encoding — no bit-reversal needed.
+
     if (proto == "NEC") {
-        // 8-bit address + inverted + 8-bit command + inverted
-        value = (uint64_t)a[0]
-              | ((uint64_t)(~a[0] & 0xFF) << 8)
-              | ((uint64_t)c[0] << 16)
-              | ((uint64_t)(~c[0] & 0xFF) << 24);
+        // encodeNEC: revAddr<<24 | ~revAddr<<16 | revCmd<<8 | ~revCmd
+        uint8_t rA = (uint8_t)reverseBits(a[0], 8);
+        uint8_t rC = (uint8_t)reverseBits(c[0], 8);
+        value = ((uint64_t)rA         << 24)
+              | ((uint64_t)(rA ^ 0xFF) << 16)
+              | ((uint64_t)rC          <<  8)
+              | (uint64_t)(rC ^ 0xFF);
     } else if (proto == "NECext") {
-        // 16-bit address + 8-bit command + inverted (no address inversion)
+        // encodeNEC (16-bit addr): revAddr16<<16 | revCmd<<8 | ~revCmd
         uint16_t a16 = a[0] | ((uint16_t)a[1] << 8);
-        value = (uint64_t)a16
-              | ((uint64_t)c[0] << 16)
-              | ((uint64_t)(~c[0] & 0xFF) << 24);
+        uint16_t rA  = (uint16_t)reverseBits(a16, 16);
+        uint8_t  rC  = (uint8_t)reverseBits(c[0], 8);
+        value = ((uint64_t)rA          << 16)
+              | ((uint64_t)rC          <<  8)
+              | (uint64_t)(rC ^ 0xFF);
     } else if (proto == "Samsung32") {
-        // Each byte repeated: AABBCCDD where AA==BB, CC==DD
-        value = (uint64_t)a[0] | ((uint64_t)a[0] << 8)
-              | ((uint64_t)c[0] << 16) | ((uint64_t)c[0] << 24);
+        // encodeSAMSUNG: revAddr<<24 | revAddr<<16 | revCmd<<8 | ~revCmd
+        // (address is repeated, NOT inverted — unlike NEC)
+        uint8_t rA = (uint8_t)reverseBits(a[0], 8);
+        uint8_t rC = (uint8_t)reverseBits(c[0], 8);
+        value = ((uint64_t)rA          << 24)
+              | ((uint64_t)rA          << 16)
+              | ((uint64_t)rC          <<  8)
+              | (uint64_t)(rC ^ 0xFF);
     } else if (proto == "SIRC") {
-        value = (uint64_t)(c[0] & 0x7F) | ((uint64_t)(a[0] & 0x1F) << 7);
+        // encodeSony(12, cmd, addr): reverseBits(addr<<7 | cmd, 12)
+        uint32_t r = (c[0] & 0x7F) | ((uint32_t)(a[0] & 0x1F) << 7);
+        value = reverseBits(r, 12);
     } else if (proto == "SIRC15") {
-        value = (uint64_t)(c[0] & 0x7F) | ((uint64_t)(a[0] & 0xFF) << 7);
+        // encodeSony(15, cmd, addr): reverseBits(addr<<7 | cmd, 15)
+        uint32_t r = (c[0] & 0x7F) | ((uint32_t)(a[0] & 0xFF) << 7);
+        value = reverseBits(r, 15);
     } else if (proto == "SIRC20") {
+        // encodeSony(20, cmd, addr, ext): reverseBits(ext<<12|addr<<7|cmd, 20)
+        // Flipper stores 5-bit addr | 8-bit extended packed into address bytes
         uint16_t a13 = (a[0] | ((uint16_t)a[1] << 8)) & 0x1FFF;
-        value = (uint64_t)(c[0] & 0x7F) | ((uint64_t)a13 << 7);
+        uint32_t r   = (c[0] & 0x7F) | ((uint32_t)a13 << 7);
+        value = reverseBits(r, 20);
     } else if (proto == "RC5") {
+        // encodeRC5(addr, cmd): (addr & 0x1F)<<6 | (cmd & 0x3F)
         value = ((uint64_t)(a[0] & 0x1F) << 6) | (c[0] & 0x3F);
     } else if (proto == "RC5X") {
         value = ((uint64_t)(a[0] & 0x1F) << 7) | (c[0] & 0x7F);
     } else if (proto == "RC6") {
+        // encodeRC6(addr, cmd, Mode0=20): (addr << 8) | cmd
         value = ((uint64_t)a[0] << 8) | c[0];
     } else if (proto == "JVC") {
-        value = (uint64_t)a[0] | ((uint64_t)c[0] << 8);
+        // encodeJVC: reverseBits((cmd<<8)|addr, 16)
+        value = reverseBits((uint64_t)((c[0] << 8) | a[0]), 16);
     } else if (proto == "LG") {
-        // LG 28-bit: 8-bit address, 16-bit command, 4-bit nibble checksum
+        // encodeLG: (addr<<20) | (cmd<<4) | nibble-checksum-of-cmd
+        // Flipper's LG checksum sums all address + command nibbles
         uint16_t cmd16 = c[0] | ((uint16_t)c[1] << 8);
         uint8_t  chk   = (a[0] >> 4) + (a[0] & 0xF)
                        + (c[0] >> 4) + (c[0] & 0xF)
