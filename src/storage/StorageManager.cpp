@@ -1,4 +1,5 @@
 #include "StorageManager.h"
+#include "ir/FlipperIrParser.h"
 
 StorageManager::StorageManager(FileSystemDriver* fileSystemDriver)
     : _fileSystemDriver(fileSystemDriver) {
@@ -63,6 +64,42 @@ bool StorageManager::setBadgeName(const String& name) {
 bool StorageManager::setBadgeStatus(const String& status) {
     if (!_available) return false;
     return _fileSystemDriver->writeTextFile(STATUS_PATH, status + "\n");
+}
+
+String StorageManager::getBadgeTagline() const {
+    if (!_available) return "";
+    String v = _fileSystemDriver->readTextFile(TAGLINE_PATH);
+    v.trim();
+    return v;
+}
+
+String StorageManager::getBadgeQrData() const {
+    if (!_available) return "";
+    String v = _fileSystemDriver->readTextFile(QR_DATA_PATH);
+    v.trim();
+    return v;
+}
+
+int StorageManager::getBadgeMode() const {
+    if (!_available) return 0;
+    String v = _fileSystemDriver->readTextFile(BADGE_MODE_PATH);
+    v.trim();
+    return v.toInt();
+}
+
+bool StorageManager::setBadgeTagline(const String& tagline) {
+    if (!_available) return false;
+    return _fileSystemDriver->writeTextFile(TAGLINE_PATH, tagline + "\n");
+}
+
+bool StorageManager::setBadgeQrData(const String& url) {
+    if (!_available) return false;
+    return _fileSystemDriver->writeTextFile(QR_DATA_PATH, url + "\n");
+}
+
+bool StorageManager::setBadgeMode(int mode) {
+    if (!_available) return false;
+    return _fileSystemDriver->writeTextFile(BADGE_MODE_PATH, String(mode) + "\n");
 }
 
 std::vector<String> StorageManager::listPayloadFiles() const {
@@ -441,6 +478,34 @@ bool StorageManager::saveSpamSSIDs(const std::vector<String>& ssids) {
         }
     }
     return _fileSystemDriver->writeTextFile(SPAM_SSIDS_PATH, content);
+}
+
+int StorageManager::importFlipperFile(const String& path) {
+    if (!_available) return 0;
+
+    String content = _fileSystemDriver->readTextFile(path.c_str());
+    if (content.isEmpty()) return 0;
+
+    auto signals = FlipperIrParser::parse(content);
+    int imported = 0;
+
+    for (auto& sig : signals) {
+        if (!sig.capture.valid) continue;
+
+        int    id     = nextIrCaptureId();
+        String fileId = makeFileId(id);
+
+        String payload  = serializeIrCapture(sig.capture);
+        String safeName = escapeName(sig.name);
+        if (safeName.isEmpty()) safeName = "Signal " + fileId;
+
+        bool ok = _fileSystemDriver->writeTextFile(makeIrCodePath(fileId).c_str(), payload) &&
+                  _fileSystemDriver->writeTextFile(makeIrNamePath(fileId).c_str(), safeName + "\n");
+        if (ok) imported++;
+    }
+
+    Serial.printf("[Storage] Flipper import from %s: %d signal(s)\n", path.c_str(), imported);
+    return imported;
 }
 
 bool StorageManager::deleteIrCaptureById(int id) {

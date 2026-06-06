@@ -142,10 +142,11 @@ void PortalManager::setupRoutes() {
     _server.on("/api/settings", HTTP_GET, [this]() { handleApiSettingsGet(); });
     _server.on("/api/settings", HTTP_POST, [this]() { handleApiSettingsPost(); });
 
-    _server.on("/api/ir/list", HTTP_GET, [this]() { handleApiIrList(); });
-    _server.on("/api/ir/send", HTTP_POST, [this]() { handleApiIrSend(); });
+    _server.on("/api/ir/list",   HTTP_GET,  [this]() { handleApiIrList();   });
+    _server.on("/api/ir/send",   HTTP_POST, [this]() { handleApiIrSend();   });
     _server.on("/api/ir/rename", HTTP_POST, [this]() { handleApiIrRename(); });
     _server.on("/api/ir/delete", HTTP_POST, [this]() { handleApiIrDelete(); });
+    _server.on("/api/ir/import", HTTP_POST, [this]() { handleApiIrImport(); });
 
     _server.on("/api/wifi/ssids",  HTTP_GET,  [this]() { handleApiWifiSsidsGet(); });
     _server.on("/api/wifi/ssids",  HTTP_POST, [this]() { handleApiWifiSsidsPost(); });
@@ -218,16 +219,23 @@ void PortalManager::handleApiSettingsGet() {
         return;
     }
 
-    String name = _storageManager->getBadgeName();
-    String status = _storageManager->getBadgeStatus();
+    auto esc = [](String s) -> String {
+        s.replace("\\", "\\\\"); s.replace("\"", "\\\""); return s;
+    };
 
-    name.replace("\"", "\\\"");
-    status.replace("\"", "\\\"");
+    String name    = esc(_storageManager->getBadgeName());
+    String status  = esc(_storageManager->getBadgeStatus());
+    String tagline = esc(_storageManager->getBadgeTagline());
+    String qrData  = esc(_storageManager->getBadgeQrData());
+    int    mode    = _storageManager->getBadgeMode();
 
     String json = "{";
     json += "\"ok\":true,";
-    json += "\"badgeName\":\"" + name + "\",";
-    json += "\"badgeStatus\":\"" + status + "\"";
+    json += "\"badgeName\":\""    + name    + "\",";
+    json += "\"badgeStatus\":\""  + status  + "\",";
+    json += "\"badgeTagline\":\"" + tagline + "\",";
+    json += "\"badgeQrData\":\""  + qrData  + "\",";
+    json += "\"badgeMode\":"      + String(mode);
     json += "}";
 
     _server.send(200, "application/json", json);
@@ -239,18 +247,21 @@ void PortalManager::handleApiSettingsPost() {
         return;
     }
 
-    String name = _server.arg("badgeName");
-    String status = _server.arg("badgeStatus");
+    String name    = _server.arg("badgeName");
+    String status  = _server.arg("badgeStatus");
+    String tagline = _server.arg("badgeTagline");
+    String qrData  = _server.arg("badgeQrData");
+    int    mode    = _server.hasArg("badgeMode")
+                     ? _server.arg("badgeMode").toInt() : -1;
 
-    bool ok1 = _storageManager->setBadgeName(name);
-    bool ok2 = _storageManager->setBadgeStatus(status);
+    bool ok = _storageManager->setBadgeName(name)
+           && _storageManager->setBadgeStatus(status);
 
-    String json = "{";
-    json += "\"ok\":";
-    json += (ok1 && ok2) ? "true" : "false";
-    json += "}";
+    _storageManager->setBadgeTagline(tagline);
+    _storageManager->setBadgeQrData(qrData);
+    if (mode >= 0) _storageManager->setBadgeMode(mode);
 
-    _server.send(200, "application/json", json);
+    _server.send(200, "application/json", ok ? "{\"ok\":true}" : "{\"ok\":false}");
 }
 
 void PortalManager::handleApiIrList() {
@@ -554,6 +565,27 @@ void PortalManager::handleApiWifiStatus() {
         count = (int)_storageManager->loadSpamSSIDs().size();
     }
     String json = "{\"ok\":true,\"ssidCount\":" + String(count) + "}";
+    _server.send(200, "application/json", json);
+}
+
+void PortalManager::handleApiIrImport() {
+    if (_storageManager == nullptr) {
+        _server.send(500, "application/json", "{\"ok\":false}");
+        return;
+    }
+
+    String path = _server.arg("path");
+    if (!isSafeFsPath(path)) {
+        _server.send(400, "application/json", "{\"ok\":false,\"error\":\"bad_path\"}");
+        return;
+    }
+
+    int count = _storageManager->importFlipperFile(path);
+
+    String json = "{";
+    json += "\"ok\":true,";
+    json += "\"count\":" + String(count);
+    json += "}";
     _server.send(200, "application/json", json);
 }
 

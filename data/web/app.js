@@ -94,19 +94,26 @@ async function loadBadge() {
   const data = await api('/api/settings');
   if (!data.ok) return;
 
-  const nameInput   = document.getElementById('badge-name');
-  const statusSel   = document.getElementById('badge-status');
-  const topLabel    = document.getElementById('badge-name-top');
+  const nameInput    = document.getElementById('badge-name');
+  const statusSel    = document.getElementById('badge-status');
+  const taglineInput = document.getElementById('badge-tagline');
+  const qrInput      = document.getElementById('badge-qr');
+  const modeSel      = document.getElementById('badge-mode');
+  const topLabel     = document.getElementById('badge-name-top');
 
-  nameInput.value = data.badgeName || '';
+  nameInput.value    = data.badgeName    || '';
+  taglineInput.value = data.badgeTagline || '';
+  qrInput.value      = data.badgeQrData  || '';
+
   if (topLabel) topLabel.textContent = data.badgeName || 'stealthy';
 
-  // Match select value (case-insensitive best-effort)
-  const val = data.badgeStatus || 'Online';
-  const opt = [...statusSel.options].find(o =>
-    o.value.toLowerCase() === val.toLowerCase()
-  );
-  statusSel.value = opt ? opt.value : 'Online';
+  const sval = data.badgeStatus || 'Online';
+  const sopt = [...statusSel.options].find(o => o.value.toLowerCase() === sval.toLowerCase());
+  statusSel.value = sopt ? sopt.value : 'Online';
+
+  const mval = String(data.badgeMode ?? 0);
+  const mopt = [...modeSel.options].find(o => o.value === mval);
+  modeSel.value = mopt ? mopt.value : '0';
 }
 
 document.getElementById('badge-form').addEventListener('submit', async e => {
@@ -115,9 +122,15 @@ document.getElementById('badge-form').addEventListener('submit', async e => {
   const feedback = document.getElementById('badge-feedback');
   const name     = document.getElementById('badge-name').value.trim();
   const status   = document.getElementById('badge-status').value;
+  const tagline  = document.getElementById('badge-tagline').value.trim();
+  const qrData   = document.getElementById('badge-qr').value.trim();
+  const mode     = document.getElementById('badge-mode').value;
 
   setBtn(btn, 'Saving…', true);
-  const data = await apiPost('/api/settings', { badgeName: name, badgeStatus: status });
+  const data = await apiPost('/api/settings', {
+    badgeName: name, badgeStatus: status,
+    badgeTagline: tagline, badgeQrData: qrData, badgeMode: mode
+  });
   setBtn(btn, 'Save', false);
 
   if (data.ok) {
@@ -411,6 +424,20 @@ async function loadUploadList() {
   files.forEach(entry => root.appendChild(buildFileRow(entry)));
 }
 
+async function irImport(path, btn, row) {
+  setBtn(btn, '…', true);
+  const data = await apiPost('/api/ir/import', { path });
+  setBtn(btn, 'Import', false);
+  if (data.ok) {
+    showRowFeedback(row, 'Imported ' + data.count + ' signal(s).', false);
+    // Refresh IR library if currently active
+    const irPane = document.getElementById('pane-ir-lib');
+    if (irPane && irPane.classList.contains('active')) loadIrLib();
+  } else {
+    showRowFeedback(row, 'Import failed.', true);
+  }
+}
+
 function buildFileRow(entry) {
   const row = document.createElement('div');
   row.className = 'file-row';
@@ -421,6 +448,12 @@ function buildFileRow(entry) {
 
   const acts = document.createElement('div');
   acts.className = 'file-actions';
+
+  // Import button for Flipper .ir files
+  if (entry.name.toLowerCase().endsWith('.ir')) {
+    const importBtn = makeBtn('Import to Library', () => irImport(entry.path, importBtn, row));
+    acts.append(importBtn);
+  }
 
   const dlBtn = makeBtn('Download', () => {
     window.location.href = '/api/file/download?path=' + encodeURIComponent(entry.path);

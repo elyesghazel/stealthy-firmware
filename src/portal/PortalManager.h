@@ -34,6 +34,7 @@ private:
     void handleApiIrSend();
     void handleApiIrRename();
     void handleApiIrDelete();
+    void handleApiIrImport();   // Flipper Zero .ir file import
 
     void handleApiWifiSsidsGet();
     void handleApiWifiSsidsPost();

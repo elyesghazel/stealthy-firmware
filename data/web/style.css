@@ -461,6 +461,15 @@ select option { background: var(--panel-2); }
 
 .top-gap { margin-top: 16px; }
 
+.field-hint {
+  color: var(--soft);
+  font-size: .72rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  margin-left: 6px;
+}
+
 /* ─── Misc ──────────────────────────────────────────────────────── */
 code {
   background: rgba(255,255,255,.06);

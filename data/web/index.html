@@ -63,7 +63,7 @@
                  placeholder="e.g. stealthy-unit-07">
         </label>
         <label class="field">
-          <span class="field-label">Badge Status</span>
+          <span class="field-label">Status</span>
           <select id="badge-status">
             <option value="Online">Online</option>
             <option value="Busy">Busy</option>
@@ -71,9 +71,28 @@
             <option value="Offline">Offline</option>
           </select>
         </label>
+        <label class="field">
+          <span class="field-label">Tagline <span class="field-hint">shown below status on device</span></span>
+          <input id="badge-tagline" type="text" maxlength="64" autocomplete="off"
+                 placeholder="Security researcher · maker · hacker">
+        </label>
+        <label class="field">
+          <span class="field-label">QR Code Data <span class="field-hint">URL or any text, max 78 chars</span></span>
+          <input id="badge-qr" type="text" maxlength="200" autocomplete="off"
+                 placeholder="https://your-link.com">
+        </label>
+        <label class="field">
+          <span class="field-label">Display Mode</span>
+          <select id="badge-mode">
+            <option value="0">Text only</option>
+            <option value="1">QR + Info side-by-side</option>
+            <option value="2">Full-screen QR</option>
+          </select>
+        </label>
         <button type="submit" class="btn-primary" id="badge-save-btn">Save</button>
         <div class="inline-feedback" id="badge-feedback" aria-live="polite"></div>
       </form>
+      <p class="note top-gap">Use <code>Select</code> on the device to cycle display modes.</p>
     </div>
 
     <!-- ── IR Library ─────────────────────────────────── -->
@@ -98,6 +117,7 @@
       </div>
       <div class="inline-feedback" id="upload-feedback" aria-live="polite"></div>
       <h3 class="section-label">Uploaded files <span class="muted">(/ir/uploads)</span></h3>
+      <p class="note">Flipper Zero <code>.ir</code> files: click <strong>Import to Library</strong> to parse all signals into the IR Library.</p>
       <div class="list" id="upload-list">
         <div class="list-placeholder">Loading…</div>
       </div>
