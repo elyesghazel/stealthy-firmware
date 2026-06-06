@@ -227,15 +227,13 @@ void PortalManager::handleApiSettingsGet() {
     String status  = esc(_storageManager->getBadgeStatus());
     String tagline = esc(_storageManager->getBadgeTagline());
     String qrData  = esc(_storageManager->getBadgeQrData());
-    int    mode    = _storageManager->getBadgeMode();
 
     String json = "{";
     json += "\"ok\":true,";
     json += "\"badgeName\":\""    + name    + "\",";
     json += "\"badgeStatus\":\""  + status  + "\",";
     json += "\"badgeTagline\":\"" + tagline + "\",";
-    json += "\"badgeQrData\":\""  + qrData  + "\",";
-    json += "\"badgeMode\":"      + String(mode);
+    json += "\"badgeQrData\":\""  + qrData  + "\"";
     json += "}";
 
     _server.send(200, "application/json", json);
@@ -251,18 +249,15 @@ void PortalManager::handleApiSettingsPost() {
     String status  = _server.arg("badgeStatus");
     String tagline = _server.arg("badgeTagline");
     String qrData  = _server.arg("badgeQrData");
-    int    mode    = _server.hasArg("badgeMode")
-                     ? _server.arg("badgeMode").toInt() : -1;
 
-    Serial.printf("[Portal] settings POST: name='%s' status='%s' tagline='%s' qr='%s' mode=%d\n",
-        name.c_str(), status.c_str(), tagline.c_str(), qrData.c_str(), mode);
+    Serial.printf("[Portal] settings POST: name='%s' status='%s' tagline='%s' qr='%s'\n",
+        name.c_str(), status.c_str(), tagline.c_str(), qrData.c_str());
 
     bool ok = _storageManager->setBadgeName(name)
            && _storageManager->setBadgeStatus(status);
 
     _storageManager->setBadgeTagline(tagline);
     _storageManager->setBadgeQrData(qrData);
-    if (mode >= 0) _storageManager->setBadgeMode(mode);
 
     _server.send(200, "application/json", ok ? "{\"ok\":true}" : "{\"ok\":false}");
 }
