@@ -405,6 +405,44 @@ std::vector<IrUploadSignal> StorageManager::loadIrUploadFile(const String& filen
 }
 
 
+std::vector<String> StorageManager::loadSpamSSIDs() const {
+    std::vector<String> ssids;
+    if (!_available) return ssids;
+
+    String raw = _fileSystemDriver->readTextFile(SPAM_SSIDS_PATH);
+    if (raw.isEmpty()) return ssids;
+
+    int start = 0;
+    while (start < (int)raw.length()) {
+        int nl = raw.indexOf('\n', start);
+        String line = (nl < 0)
+            ? raw.substring(start)
+            : raw.substring(start, nl);
+        line.trim();
+        if (!line.isEmpty() && ssids.size() < 20) {
+            ssids.push_back(line);
+        }
+        if (nl < 0) break;
+        start = nl + 1;
+    }
+    return ssids;
+}
+
+bool StorageManager::saveSpamSSIDs(const std::vector<String>& ssids) {
+    if (!_available) return false;
+    String content;
+    int count = (int)ssids.size();
+    if (count > 20) count = 20;
+    for (int i = 0; i < count; i++) {
+        String line = ssids[i];
+        line.trim();
+        if (!line.isEmpty()) {
+            content += line + "\n";
+        }
+    }
+    return _fileSystemDriver->writeTextFile(SPAM_SSIDS_PATH, content);
+}
+
 bool StorageManager::deleteIrCaptureById(int id) {
     if (!_available) {
         return false;

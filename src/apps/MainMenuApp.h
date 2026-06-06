@@ -2,13 +2,9 @@
 #include "framework/IApp.h"
 
 class AppManager;
-class IApp;
 class DisplayManager;
 
-enum class MenuRenderMode {
-    Full,
-    Partial
-};
+enum class MenuRenderMode { Full, Partial };
 
 class MainMenuApp : public IApp {
 public:
@@ -20,9 +16,9 @@ public:
         IApp* settingsApp,
         IApp* aboutApp,
         IApp* irToolsApp,
-        IApp* portalApp
+        IApp* portalApp,
+        IApp* wifiToolsApp
     );
-
 
     void onEnter() override;
     void onExit() override;
@@ -31,30 +27,31 @@ public:
     void render(DisplayManager& display) override;
 
 private:
-    static const int ITEM_COUNT = 5;
+    static const int ITEM_COUNT    = 6;
     static const int VISIBLE_ITEMS = 4;
 
-    AppManager* _appManager = nullptr;
-    IApp* _badgeApp = nullptr;
-    IApp* _settingsApp = nullptr;
-    IApp* _aboutApp = nullptr;
-    IApp* _irToolsApp = nullptr;
-    IApp* _portalApp = nullptr;
-    
+    AppManager* _appManager    = nullptr;
+    IApp*       _badgeApp      = nullptr;
+    IApp*       _settingsApp   = nullptr;
+    IApp*       _aboutApp      = nullptr;
+    IApp*       _irToolsApp    = nullptr;
+    IApp*       _portalApp     = nullptr;
+    IApp*       _wifiToolsApp  = nullptr;
 
     const char* _items[ITEM_COUNT] = {
         "Badge",
         "Settings",
         "About",
         "Captive Portal",
-        "IR Tools"
+        "IR Tools",
+        "WiFi Tools"
     };
 
-    int _selectedIndex = 0;
-    int _scrollOffset = 0;
+    int _selectedIndex    = 0;
+    int _scrollOffset     = 0;
     int _partialUpdateCount = 0;
 
-    bool _needsRender = true;
+    bool _needsRender        = true;
     MenuRenderMode _renderMode = MenuRenderMode::Full;
 
     void moveSelectionUp();

@@ -2,7 +2,6 @@
 #include <driver/rtc_io.h>
 #include <esp_system.h>
 
-
 #include "input/ButtonManager.h"
 #include "display/DisplayManager.h"
 #include "storage/FileSystemDriver.h"
@@ -16,7 +15,8 @@
 #include "ir/IrManager.h"
 #include "led/LedManager.h"
 #include "portal/PortalManager.h"
-
+#include "wifi/WifiSpammer.h"
+#include "wifi/WifiDeauth.h"
 
 #include "DeviceSettings.h"
 
@@ -27,63 +27,63 @@
 #include "apps/IrToolsApp.h"
 #include "apps/SettingsApp.h"
 #include "apps/PortalApp.h"
+#include "apps/WifiToolsApp.h"
+#include "apps/WifiSpammerApp.h"
+#include "apps/WifiDeauthApp.h"
 
-
-// pins
-static const int PIN_BTN_UP = 10;
-static const int PIN_BTN_DOWN = 11;
+// Pins
+static const int PIN_BTN_UP     = 10;
+static const int PIN_BTN_DOWN   = 11;
 static const int PIN_BTN_SELECT = 12;
-static const int PIN_BTN_BACK = 13;
+static const int PIN_BTN_BACK   = 13;
+static const int LED_BLUE       = 2;
+static const int LED_GREEN      = 1;
 
-static const int LED_BLUE = 2;
-static const int LED_GREEN = 1;
-
-// drivers and managers
-AppContext appContext;
+// Drivers & managers
+AppContext     appContext;
 FileSystemDriver fileSystemDriver;
-IrDriver irDriver;
-LedDriver ledDriver(LED_BLUE, LED_GREEN);
+IrDriver       irDriver;
+LedDriver      ledDriver(LED_BLUE, LED_GREEN);
 
 StorageManager storageManager(&fileSystemDriver);
 DisplayManager displayManager;
-PowerManager powerManager;
-AppManager appManager;
-IrManager irManager(&irDriver);
-LedManager ledManager(&ledDriver);
-
-ButtonManager buttonManager(PIN_BTN_UP, PIN_BTN_DOWN, PIN_BTN_SELECT, PIN_BTN_BACK);
-PortalManager portalManager(&storageManager, &irManager, &powerManager);
+PowerManager   powerManager;
+AppManager     appManager;
+IrManager      irManager(&irDriver);
+LedManager     ledManager(&ledDriver);
+ButtonManager  buttonManager(PIN_BTN_UP, PIN_BTN_DOWN, PIN_BTN_SELECT, PIN_BTN_BACK);
+PortalManager  portalManager(&storageManager, &irManager, &powerManager);
+WifiSpammer    wifiSpammer;
+WifiDeauth     wifiDeauth;
 
 DeviceSettings deviceSettings;
 
-// apps
+// Apps
 StartScreenApp startScreenApp;
-BadgeApp badgeApp;
-MainMenuApp mainMenuApp;
-AboutApp aboutApp;
-SettingsApp settingsApp;
-IrToolsApp irToolsApp;
-PortalApp portalApp;
+BadgeApp       badgeApp;
+MainMenuApp    mainMenuApp;
+AboutApp       aboutApp;
+SettingsApp    settingsApp;
+IrToolsApp     irToolsApp;
+PortalApp      portalApp;
+WifiToolsApp   wifiToolsApp;
+WifiSpammerApp wifiSpammerApp;
+WifiDeauthApp  wifiDeauthApp;
 
 void initFileSystem() {
-    // note: file system gets initialized in StorageManager
     if (!storageManager.begin()) {
         Serial.println("[Storage] init failed");
     } else {
         Serial.println("[Storage] ready");
-        Serial.println("[DEBUG Storage]: " + storageManager.getBadgeName());
-        Serial.println("[DEBUG Storage]: " + storageManager.getBadgeStatus());
+        Serial.println("[Storage] badge: " + storageManager.getBadgeName());
     }
 }
-
 
 void printResetReason() {
     esp_reset_reason_t reason = esp_reset_reason();
     Serial.print("[Boot] Reset reason: ");
     Serial.println((int)reason);
 }
-
-
 
 void setup() {
     Serial.begin(115200);
@@ -97,54 +97,47 @@ void setup() {
     ledManager.begin();
     ledManager.showBooting();
 
-
-    displayManager.begin(!wokeFromDeepSleep); // true on cold boot, false after deep sleep wake
-    powerManager.begin(300000); // 5 minute inactivity timeout for sleep
-    
+    displayManager.begin(!wokeFromDeepSleep);
+    powerManager.begin(300000);
     displayManager.attachPowerManager(&powerManager);
-    printResetReason();
-
 
     Serial.printf("Wake cause: %d\n", wakeCause);
-    if (wakeCause == ESP_SLEEP_WAKEUP_EXT1) {
-        Serial.printf("EXT1 status mask: 0x%llX\n", esp_sleep_get_ext1_wakeup_status());
-    }
-
     rtc_gpio_deinit(GPIO_NUM_12);
-
     buttonManager.begin();
 
-    if (!irManager.begin()) {
-        Serial.println("[IR Manager] failed to initialize");
-    } else {
-        Serial.println("[IR Manager] ready");
-    }
+    if (!irManager.begin()) Serial.println("[IR] init failed");
+    else                    Serial.println("[IR] ready");
 
-    appContext.display = &displayManager;
-    appContext.buttons = &buttonManager;
-    appContext.power = &powerManager;
-    appContext.storage = &storageManager;
-    appContext.ir = &irManager;
-    appContext.leds = &ledManager;
-    appContext.portal = &portalManager;
+    appContext.display  = &displayManager;
+    appContext.buttons  = &buttonManager;
+    appContext.power    = &powerManager;
+    appContext.storage  = &storageManager;
+    appContext.ir       = &irManager;
+    appContext.leds     = &ledManager;
+    appContext.portal   = &portalManager;
+    appContext.spammer  = &wifiSpammer;
+    appContext.deauth   = &wifiDeauth;
 
-    // Initialize filesystem and storage manager
     initFileSystem();
 
-    // app initialization and setup
+    // App setup
     startScreenApp.setup(&appManager, &mainMenuApp);
     badgeApp.setup(&appManager, &mainMenuApp);
     aboutApp.setup(&appManager, &mainMenuApp);
     settingsApp.setup(&appManager, &mainMenuApp, &deviceSettings);
     irToolsApp.setup(&appManager, &mainMenuApp);
     portalApp.setup(&appManager, &mainMenuApp);
+    wifiToolsApp.setup(&appManager, &mainMenuApp, &wifiSpammerApp, &wifiDeauthApp);
+    wifiSpammerApp.setup(&appManager, &wifiToolsApp);
+    wifiDeauthApp.setup(&appManager, &wifiToolsApp);
 
-    // portalManager.begin();
-
-    mainMenuApp.setup(&appManager, &badgeApp, &settingsApp, &aboutApp, &irToolsApp, &portalApp);
+    mainMenuApp.setup(
+        &appManager,
+        &badgeApp, &settingsApp, &aboutApp,
+        &irToolsApp, &portalApp, &wifiToolsApp
+    );
 
     appManager.begin(&startScreenApp, &appContext);
-
     ledManager.showSuccess();
 }
 
@@ -166,9 +159,7 @@ void loop() {
     static unsigned long lastPrint = 0;
     if (millis() - lastPrint > 3000) {
         lastPrint = millis();
-        Serial.print("Battery: ");
-        Serial.print(powerManager.readBatteryVoltage(), 2);
-        Serial.println(" V");
+        Serial.printf("Battery: %.2f V\n", powerManager.readBatteryVoltage());
     }
 
     if (powerManager.shouldSleep()) {

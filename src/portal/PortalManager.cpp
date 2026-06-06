@@ -147,8 +147,13 @@ void PortalManager::setupRoutes() {
     _server.on("/api/ir/rename", HTTP_POST, [this]() { handleApiIrRename(); });
     _server.on("/api/ir/delete", HTTP_POST, [this]() { handleApiIrDelete(); });
 
-    _server.on("/api/fs/list", HTTP_GET, [this]() { handleApiFsList(); });
-    _server.on("/api/file/download", HTTP_GET, [this]() { handleApiFileDownload(); });
+    _server.on("/api/wifi/ssids",  HTTP_GET,  [this]() { handleApiWifiSsidsGet(); });
+    _server.on("/api/wifi/ssids",  HTTP_POST, [this]() { handleApiWifiSsidsPost(); });
+    _server.on("/api/wifi/status", HTTP_GET,  [this]() { handleApiWifiStatus(); });
+
+    _server.on("/api/fs/list",      HTTP_GET,  [this]() { handleApiFsList(); });
+    _server.on("/api/file/download",HTTP_GET,  [this]() { handleApiFileDownload(); });
+    _server.on("/api/file/delete",  HTTP_POST, [this]() { handleApiFileDelete(); });
     _server.on("/api/file/upload", HTTP_POST,
         [this]() {
             if (_uploadHadError) {
@@ -504,6 +509,63 @@ void PortalManager::handleApiFileUpload() {
     }
 }
 
+
+void PortalManager::handleApiWifiSsidsGet() {
+    if (!_storageManager) {
+        _server.send(500, "application/json", "{\"ok\":false}");
+        return;
+    }
+    auto ssids = _storageManager->loadSpamSSIDs();
+    String json = "{\"ok\":true,\"ssids\":[";
+    for (size_t i = 0; i < ssids.size(); i++) {
+        String s = ssids[i];
+        s.replace("\\", "\\\\");
+        s.replace("\"", "\\\"");
+        json += "\"" + s + "\"";
+        if (i + 1 < ssids.size()) json += ",";
+    }
+    json += "]}";
+    _server.send(200, "application/json", json);
+}
+
+void PortalManager::handleApiWifiSsidsPost() {
+    if (!_storageManager) {
+        _server.send(500, "application/json", "{\"ok\":false}");
+        return;
+    }
+    String raw = _server.arg("ssids");
+    std::vector<String> ssids;
+    int start = 0;
+    while (start < (int)raw.length()) {
+        int nl = raw.indexOf('\n', start);
+        String line = (nl < 0) ? raw.substring(start) : raw.substring(start, nl);
+        line.trim();
+        if (!line.isEmpty() && ssids.size() < 20) ssids.push_back(line);
+        if (nl < 0) break;
+        start = nl + 1;
+    }
+    bool ok = _storageManager->saveSpamSSIDs(ssids);
+    _server.send(200, "application/json", ok ? "{\"ok\":true}" : "{\"ok\":false}");
+}
+
+void PortalManager::handleApiWifiStatus() {
+    int count = 0;
+    if (_storageManager) {
+        count = (int)_storageManager->loadSpamSSIDs().size();
+    }
+    String json = "{\"ok\":true,\"ssidCount\":" + String(count) + "}";
+    _server.send(200, "application/json", json);
+}
+
+void PortalManager::handleApiFileDelete() {
+    String path = _server.arg("path");
+    if (!isSafeFsPath(path)) {
+        _server.send(400, "application/json", "{\"ok\":false,\"error\":\"bad_path\"}");
+        return;
+    }
+    bool ok = LittleFS.remove(path);
+    _server.send(200, "application/json", ok ? "{\"ok\":true}" : "{\"ok\":false}");
+}
 
 String PortalManager::contentTypeForPath(const String& path) const {
     if (path.endsWith(".html")) return "text/html";

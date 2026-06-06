@@ -7,7 +7,6 @@ class StorageManager;
 class IrManager;
 class PowerManager;
 
-
 class PortalManager {
 public:
     PortalManager(StorageManager* storageManager, IrManager* irManager, PowerManager* powerManager);
@@ -15,9 +14,9 @@ public:
     void stop();
     void update();
 
-    bool isRunning() const;
-    const char* ssid() const;
-    const char* ipAddress() const;
+    bool        isRunning()  const;
+    const char* ssid()       const;
+    const char* ipAddress()  const;
 
 private:
     void setupRoutes();
@@ -30,29 +29,34 @@ private:
     void handleApiStatus();
     void handleApiSettingsGet();
     void handleApiSettingsPost();
+
     void handleApiIrList();
     void handleApiIrSend();
     void handleApiIrRename();
     void handleApiIrDelete();
-    void handleApiFileDownload();
+
+    void handleApiWifiSsidsGet();
+    void handleApiWifiSsidsPost();
+    void handleApiWifiStatus();
+
     void handleApiFsList();
+    void handleApiFileDownload();
     void handleApiFileUpload();
-
-
+    void handleApiFileDelete();
 
     String contentTypeForPath(const String& path) const;
-    bool serveFile(const char* path);
+    bool   serveFile(const char* path);
 
     StorageManager* _storageManager = nullptr;
-    IrManager* _irManager = nullptr;
-    PowerManager* _powerManager = nullptr;
+    IrManager*      _irManager      = nullptr;
+    PowerManager*   _powerManager   = nullptr;
 
-    DNSServer _dnsServer;
-    WebServer _server;
+    DNSServer  _dnsServer;
+    WebServer  _server;
 
-    bool _running = false;
+    bool _running        = false;
     bool _uploadHadError = false;
 
     static constexpr const char* AP_SSID = "STEALTHY-SETUP";
-    static constexpr const char* AP_IP = "192.168.4.1";
+    static constexpr const char* AP_IP   = "192.168.4.1";
 };

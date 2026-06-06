@@ -51,12 +51,16 @@ public:
     bool renameIrCaptureById(int id, const String& newName);
     bool deleteIrCaptureById(int id);
 
+    std::vector<String> loadSpamSSIDs() const;
+    bool saveSpamSSIDs(const std::vector<String>& ssids);
+
 private:
     FileSystemDriver* _fileSystemDriver = nullptr;
     bool _available = false;
 
     static constexpr const char* NAME_PATH = "/config/name.txt";
     static constexpr const char* STATUS_PATH = "/config/status.txt";
+    static constexpr const char* SPAM_SSIDS_PATH = "/config/spam_ssids.txt";
     static constexpr const char* PAYLOADS_DIR = "/payloads";
     static constexpr const char* IR_UPLOADS_DIR = "/ir/uploads";
     static constexpr const char* IR_DIR = "/ir/saved";

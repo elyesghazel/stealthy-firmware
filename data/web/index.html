@@ -1,98 +1,125 @@
 <!doctype html>
 <html lang="en">
-
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Stealthy Portal</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Stealthy</title>
+  <link rel="stylesheet" href="/style.css">
 </head>
-
 <body>
-  <main class="app-shell">
-    <div class="shell-noise"></div>
+<div class="shell">
+  <div class="noise"></div>
 
-    <div class="wrap">
-      <header class="hero">
-        <div class="hero-topline">
-          <span class="prompt">root@stealthy:~# portal</span>
-          <span class="session-pill">secure session</span>
-        </div>
-
-        <h1>Stealthy Control Panel</h1>
-        <p class="sub">Badge provisioning and IR device control</p>
-      </header>
-
-      <section class="grid">
-        <section class="panel panel-system">
-          <div class="panel-head">
-            <h2>System</h2>
-            <span class="panel-tag online">online</span>
-          </div>
-
-          <div class="system-stats">
-            <div class="stat-box">
-              <span class="stat-label">Status</span>
-              <strong id="status">Loading...</strong>
-            </div>
-
-            <div class="stat-box">
-              <span class="stat-label">Battery</span>
-              <strong id="battery">--.-- V</strong>
-            </div>
-          </div>
-
-          <p class="panel-note">For stable Wi-Fi control, keep the device adequately charged.</p>
-        </section>
-
-        <section class="panel panel-settings">
-          <div class="panel-head">
-            <h2>Badge Settings</h2>
-            <span class="panel-tag">config</span>
-          </div>
-
-          <form id="settingsForm" class="form">
-            <label class="field">
-              <span>Badge Name</span>
-              <input id="badgeName" name="badgeName" type="text" maxlength="32" placeholder="e.g. stealth-unit-07">
-            </label>
-
-            <label class="field">
-              <span>Badge Status</span>
-              <input id="badgeStatus" name="badgeStatus" type="text" maxlength="32"
-                placeholder="e.g. active / idle / hidden">
-            </label>
-
-            <button type="submit" class="primary-btn">Save Settings</button>
-          </form>
-
-          <div id="settingsResult" class="result" aria-live="polite"></div>
-        </section>
-      </section>
-
-      <section class="panel">
-        <div class="panel-head">
-          <h2>Saved IR Captures</h2>
-          <span class="panel-tag">library</span>
-        </div>
-
-        <div id="irList" class="list">Loading...</div>
-      </section>
-      <section class="card">
-        <h2>IR File Browser</h2>
-        <div id="fsPath" class="result">/ir</div>
-
-        <form id="uploadForm">
-          <input id="uploadFile" type="file" name="file" />
-          <button type="submit">Upload Here</button>
-        </form>
-
-        <div id="fsList" class="list">Loading...</div>
-      </section>
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="prompt">root@stealthy</span><span class="topbar-sep">:~#</span>
+      <span class="topbar-label" id="badge-name-top">stealthy</span>
     </div>
+    <div class="topbar-right">
+      <span class="battery-val" id="battery-top">-- V</span>
+      <span class="status-led" id="status-led" title="portal active"></span>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="system"    role="tab" aria-selected="true">System</button>
+    <button class="tab"        data-tab="badge"     role="tab">Badge</button>
+    <button class="tab"        data-tab="ir-lib"    role="tab">IR Library</button>
+    <button class="tab"        data-tab="ir-upload" role="tab">IR Upload</button>
+    <button class="tab"        data-tab="wifi"      role="tab">WiFi Tools</button>
+  </nav>
+
+  <main class="content">
+
+    <!-- ── System ─────────────────────────────────────── -->
+    <div class="pane active" id="pane-system">
+      <div class="stat-grid">
+        <div class="stat-card">
+          <span class="stat-label">Battery</span>
+          <strong class="stat-val" id="sys-battery">--</strong>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Portal</span>
+          <strong class="stat-val accent" id="sys-status">active</strong>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">SSID</span>
+          <strong class="stat-val" id="sys-ssid">--</strong>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">IP</span>
+          <strong class="stat-val" id="sys-ip">--</strong>
+        </div>
+      </div>
+      <p class="note">Keep device charged for stable Wi-Fi. Battery reading may fluctuate under load.</p>
+    </div>
+
+    <!-- ── Badge ──────────────────────────────────────── -->
+    <div class="pane" id="pane-badge">
+      <form id="badge-form" class="form" novalidate>
+        <label class="field">
+          <span class="field-label">Badge Name</span>
+          <input id="badge-name" type="text" maxlength="32" autocomplete="off"
+                 placeholder="e.g. stealthy-unit-07">
+        </label>
+        <label class="field">
+          <span class="field-label">Badge Status</span>
+          <select id="badge-status">
+            <option value="Online">Online</option>
+            <option value="Busy">Busy</option>
+            <option value="Away">Away</option>
+            <option value="Offline">Offline</option>
+          </select>
+        </label>
+        <button type="submit" class="btn-primary" id="badge-save-btn">Save</button>
+        <div class="inline-feedback" id="badge-feedback" aria-live="polite"></div>
+      </form>
+    </div>
+
+    <!-- ── IR Library ─────────────────────────────────── -->
+    <div class="pane" id="pane-ir-lib">
+      <div class="list" id="ir-list">
+        <div class="list-placeholder">Loading captures…</div>
+      </div>
+    </div>
+
+    <!-- ── IR Upload ──────────────────────────────────── -->
+    <div class="pane" id="pane-ir-upload">
+      <div class="drop-zone" id="drop-zone" role="button" tabindex="0"
+           aria-label="Drop .ir files here or click to browse">
+        <div class="drop-icon">↑</div>
+        <div class="drop-text">Drop <code>.ir</code> files here</div>
+        <div class="drop-sub">or click to browse</div>
+        <input type="file" id="upload-input" accept=".ir" multiple hidden>
+      </div>
+      <div class="progress-wrap hidden" id="upload-progress-wrap">
+        <div class="progress-bar" id="upload-progress-bar"></div>
+        <span class="progress-label" id="upload-progress-label">0%</span>
+      </div>
+      <div class="inline-feedback" id="upload-feedback" aria-live="polite"></div>
+      <h3 class="section-label">Uploaded files <span class="muted">(/ir/uploads)</span></h3>
+      <div class="list" id="upload-list">
+        <div class="list-placeholder">Loading…</div>
+      </div>
+    </div>
+
+    <!-- ── WiFi Tools ─────────────────────────────────── -->
+    <div class="pane" id="pane-wifi">
+      <h3 class="section-label">Beacon Flood — SSID List</h3>
+      <p class="note">One network name per line. Max 20. Start/stop from the device menu.</p>
+      <textarea id="ssid-textarea" class="ssid-area" rows="8"
+                placeholder="FreeWifi&#10;OpenNetwork&#10;FBI Surveillance Van&#10;…"></textarea>
+      <div class="row-actions">
+        <button class="btn-primary" id="ssid-save-btn">Save SSIDs</button>
+        <span class="stat-badge" id="ssid-count-badge">0 SSIDs</span>
+      </div>
+      <div class="inline-feedback" id="wifi-feedback" aria-live="polite"></div>
+      <p class="note top-gap">WiFi deauth target selection is done on the device display.</p>
+    </div>
+
   </main>
+</div>
 
-  <script src="/app.js"></script>
+<script src="/app.js"></script>
 </body>
-
 </html>
