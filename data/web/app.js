@@ -955,5 +955,12 @@ document.getElementById('totp-add-btn').addEventListener('click', async () => {
 });
 
 /* ── Init ──────────────────────────────────────────────────────── */
+
+// Sync device clock silently on every portal load — keeps TOTP working
+// after reboots without requiring the user to open the TOTP tab first.
+(async () => {
+  await apiPost('/api/totp/sync-time', { timestamp: String(Math.floor(Date.now() / 1000)) });
+})();
+
 loadSystem();
 loadAutostart();
