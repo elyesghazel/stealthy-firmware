@@ -33,6 +33,15 @@ bool StorageManager::begin() {
     ensureFile(STATUS_PATH,  "Online\n");
     ensureFile(TAGLINE_PATH, "\n");
     ensureFile(QR_DATA_PATH, "\n");
+    ensureFile(BADGE_MODE_PATH,        "0\n");
+    ensureFile(SPAM_SSIDS_PATH,        "");
+    ensureFile(PORTAL_AUTOSTART_PATH,  "0");
+    ensureFile(DEVICE_SETTINGS_PATH,
+        "sleepTimeoutIndex=1\n"
+        "refreshIndex=1\n"
+        "badgeStatusIndex=0\n"
+        "showStartScreen=1\n"
+    );
 
     return true;
 }
@@ -491,6 +500,40 @@ int StorageManager::importFlipperFile(const String& path) {
 
     Serial.printf("[Storage] Flipper import from %s: %d signal(s)\n", path.c_str(), imported);
     return imported;
+}
+
+bool StorageManager::loadDeviceSettings(DeviceSettings& out) const {
+    if (!_available) return false;
+    String raw = _fileSystemDriver->readTextFile(DEVICE_SETTINGS_PATH);
+    if (raw.isEmpty()) return false;
+
+    int pos = 0;
+    while (pos < (int)raw.length()) {
+        int nl = raw.indexOf('\n', pos);
+        String line = (nl < 0) ? raw.substring(pos) : raw.substring(pos, nl);
+        pos = (nl < 0) ? raw.length() : nl + 1;
+        line.trim();
+        int eq = line.indexOf('=');
+        if (eq < 0) continue;
+        String key = line.substring(0, eq);
+        String val = line.substring(eq + 1);
+        key.trim(); val.trim();
+        if (key == "sleepTimeoutIndex")    out.sleepTimeoutIndex    = constrain(val.toInt(), 0, 3);
+        else if (key == "refreshIndex")    out.refreshIntervalIndex = constrain(val.toInt(), 0, 2);
+        else if (key == "badgeStatusIndex")out.badgeStatusIndex     = constrain(val.toInt(), 0, 3);
+        else if (key == "showStartScreen") out.showStartScreen      = (val == "1");
+    }
+    return true;
+}
+
+bool StorageManager::saveDeviceSettings(const DeviceSettings& s) {
+    if (!_available) return false;
+    String content;
+    content += "sleepTimeoutIndex="    + String(s.sleepTimeoutIndex)    + "\n";
+    content += "refreshIndex="         + String(s.refreshIntervalIndex) + "\n";
+    content += "badgeStatusIndex="     + String(s.badgeStatusIndex)     + "\n";
+    content += "showStartScreen="      + String(s.showStartScreen ? 1 : 0) + "\n";
+    return _fileSystemDriver->writeTextFile(DEVICE_SETTINGS_PATH, content);
 }
 
 bool StorageManager::getPortalAutostart() const {

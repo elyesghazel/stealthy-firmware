@@ -57,6 +57,7 @@ private:
     void moveDown();
     void selectItem();
     void goBack();
+    void applyAndSave();
 
     void requestFullRender();
     void requestPartialRender();

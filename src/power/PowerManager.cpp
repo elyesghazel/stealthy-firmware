@@ -18,6 +18,10 @@ void PowerManager::begin(unsigned long sleepTimeoutMs) {
     analogSetPinAttenuation(BATTERY_ADC_PIN, ADC_11db);
 }
 
+void PowerManager::setSleepTimeout(unsigned long ms) {
+    _sleepTimeoutMs = ms;
+}
+
 void PowerManager::notifyUserActivity() {
     _lastActivityMs = millis();
     _shouldSleep = false;

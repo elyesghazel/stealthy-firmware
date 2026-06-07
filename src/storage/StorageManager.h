@@ -4,6 +4,7 @@
 #include <vector>
 #include "storage/FileSystemDriver.h"
 #include "ir/IrDriver.h"
+#include "DeviceSettings.h"
 
 struct IrSavedItem {
     int id = 0;
@@ -60,6 +61,9 @@ public:
     std::vector<String> loadSpamSSIDs() const;
     bool saveSpamSSIDs(const std::vector<String>& ssids);
 
+    bool loadDeviceSettings(DeviceSettings& out) const;
+    bool saveDeviceSettings(const DeviceSettings& settings);
+
     // Import all signals from a Flipper Zero .ir file; returns count imported
     int importFlipperFile(const String& path);
 
@@ -80,7 +84,8 @@ private:
     static constexpr const char* QR_DATA_PATH    = "/config/qr_data.txt";
     static constexpr const char* BADGE_MODE_PATH = "/config/badge_mode.txt";
     static constexpr const char* SPAM_SSIDS_PATH = "/config/spam_ssids.txt";
-    static constexpr const char* PORTAL_AUTOSTART_PATH = "/config/portal_autostart.txt";
+    static constexpr const char* PORTAL_AUTOSTART_PATH   = "/config/portal_autostart.txt";
+    static constexpr const char* DEVICE_SETTINGS_PATH    = "/config/device_settings.txt";
     static constexpr const char* PAYLOADS_DIR = "/payloads";
     static constexpr const char* IR_UPLOADS_DIR = "/ir/uploads";
     static constexpr const char* IR_DIR = "/ir/saved";

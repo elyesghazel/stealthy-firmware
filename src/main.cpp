@@ -58,9 +58,9 @@ ButtonManager  buttonManager(PIN_BTN_UP, PIN_BTN_DOWN, PIN_BTN_SELECT, PIN_BTN_B
 WifiSpammer    wifiSpammer;
 WifiDeauth     wifiDeauth;
 WifiKarma      wifiKarma;
-PortalManager  portalManager(&storageManager, &irManager, &powerManager, &wifiKarma);
-
 DeviceSettings deviceSettings;
+
+PortalManager  portalManager(&storageManager, &irManager, &powerManager, &wifiKarma, &deviceSettings);
 
 // Apps
 StartScreenApp startScreenApp;
@@ -124,6 +124,14 @@ void setup() {
     appContext.karma    = &wifiKarma;
 
     initFileSystem();
+
+    // Load persisted settings; apply sleep timeout immediately
+    storageManager.loadDeviceSettings(deviceSettings);
+    {
+        static const unsigned long timeouts[] = {10000, 30000, 60000, 180000};
+        int idx = constrain(deviceSettings.sleepTimeoutIndex, 0, 3);
+        powerManager.setSleepTimeout(timeouts[idx]);
+    }
 
     if (storageManager.getPortalAutostart()) {
         _autoStartPortalAt = millis() + 2500;

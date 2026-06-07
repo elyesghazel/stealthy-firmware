@@ -1,6 +1,8 @@
 #include "SettingsApp.h"
 #include "framework/AppManager.h"
 #include "display/DisplayManager.h"
+#include "power/PowerManager.h"
+#include "storage/StorageManager.h"
 
 namespace {
     constexpr int TITLE_X = 5;
@@ -90,6 +92,25 @@ void SettingsApp::handleButton(const ButtonEvent& event) {
                 goBack();
             }
             break;
+    }
+}
+
+void SettingsApp::applyAndSave() {
+    if (!_settings || !_appManager) return;
+    auto* storage = _appManager->context()->storage;
+    auto* power   = _appManager->context()->power;
+
+    if (storage) storage->saveDeviceSettings(*_settings);
+
+    if (power) {
+        static const unsigned long timeouts[] = {10000, 30000, 60000, 180000};
+        power->setSleepTimeout(timeouts[constrain(_settings->sleepTimeoutIndex, 0, 3)]);
+    }
+
+    // Keep badge status in sync with StorageManager (read by BadgeApp)
+    if (storage) {
+        static const char* statuses[] = {"Online", "Busy", "Away", "Offline"};
+        storage->setBadgeStatus(String(statuses[constrain(_settings->badgeStatusIndex, 0, 3)]));
     }
 }
 
@@ -243,36 +264,23 @@ void SettingsApp::moveUp() {
         return;
     }
 
+    bool changed = false;
     switch (_selectedIndex) {
         case 0:
-            if (_settings->sleepTimeoutIndex > 0) {
-                _settings->sleepTimeoutIndex--;
-                requestPartialRender();
-            }
+            if (_settings->sleepTimeoutIndex > 0) { _settings->sleepTimeoutIndex--; changed = true; }
             break;
-
         case 1:
-            if (_settings->refreshIntervalIndex > 0) {
-                _settings->refreshIntervalIndex--;
-                requestPartialRender();
-            }
+            if (_settings->refreshIntervalIndex > 0) { _settings->refreshIntervalIndex--; changed = true; }
             break;
-
         case 2:
-            if (_settings->badgeStatusIndex > 0) {
-                _settings->badgeStatusIndex--;
-                requestPartialRender();
-            }
+            if (_settings->badgeStatusIndex > 0) { _settings->badgeStatusIndex--; changed = true; }
             break;
-
         case 3:
-            _settings->showStartScreen = !_settings->showStartScreen;
-            requestPartialRender();
+            _settings->showStartScreen = !_settings->showStartScreen; changed = true;
             break;
-
-        default:
-            break;
+        default: break;
     }
+    if (changed) { applyAndSave(); requestPartialRender(); }
 }
 
 void SettingsApp::moveDown() {
@@ -302,36 +310,23 @@ void SettingsApp::moveDown() {
         return;
     }
 
+    bool changed = false;
     switch (_selectedIndex) {
         case 0:
-            if (_settings->sleepTimeoutIndex < 3) {
-                _settings->sleepTimeoutIndex++;
-                requestPartialRender();
-            }
+            if (_settings->sleepTimeoutIndex < 3) { _settings->sleepTimeoutIndex++; changed = true; }
             break;
-
         case 1:
-            if (_settings->refreshIntervalIndex < 2) {
-                _settings->refreshIntervalIndex++;
-                requestPartialRender();
-            }
+            if (_settings->refreshIntervalIndex < 2) { _settings->refreshIntervalIndex++; changed = true; }
             break;
-
         case 2:
-            if (_settings->badgeStatusIndex < 3) {
-                _settings->badgeStatusIndex++;
-                requestPartialRender();
-            }
+            if (_settings->badgeStatusIndex < 3) { _settings->badgeStatusIndex++; changed = true; }
             break;
-
         case 3:
-            _settings->showStartScreen = !_settings->showStartScreen;
-            requestPartialRender();
+            _settings->showStartScreen = !_settings->showStartScreen; changed = true;
             break;
-
-        default:
-            break;
+        default: break;
     }
+    if (changed) { applyAndSave(); requestPartialRender(); }
 }
 
 void SettingsApp::selectItem() {

@@ -93,10 +93,22 @@ async function loadAutostart() {
   if (!data.ok) return;
   const toggle = document.getElementById('autostart-toggle');
   if (toggle) toggle.checked = !!data.portalAutostart;
+  const sleepSel = document.getElementById('sleep-timeout-select');
+  if (sleepSel) sleepSel.value = String(data.sleepTimeoutIndex ?? 1);
+  const startToggle = document.getElementById('start-screen-toggle');
+  if (startToggle) startToggle.checked = data.showStartScreen !== false;
 }
 
 document.getElementById('autostart-toggle').addEventListener('change', async function() {
   await apiPost('/api/settings', { portalAutostart: this.checked ? '1' : '0' });
+});
+
+document.getElementById('sleep-timeout-select').addEventListener('change', async function() {
+  await apiPost('/api/settings', { sleepTimeoutIndex: this.value });
+});
+
+document.getElementById('start-screen-toggle').addEventListener('change', async function() {
+  await apiPost('/api/settings', { showStartScreen: this.checked ? '1' : '0' });
 });
 
 setInterval(async () => {

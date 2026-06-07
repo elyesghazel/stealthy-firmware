@@ -2,6 +2,7 @@
 
 #include <WebServer.h>
 #include <DNSServer.h>
+#include "DeviceSettings.h"
 
 class StorageManager;
 class IrManager;
@@ -11,7 +12,8 @@ class WifiKarma;
 class PortalManager {
 public:
     PortalManager(StorageManager* storageManager, IrManager* irManager,
-                  PowerManager* powerManager, WifiKarma* karmaManager);
+                  PowerManager* powerManager, WifiKarma* karmaManager,
+                  DeviceSettings* deviceSettings);
     bool begin();
     void stop();
     void update();
@@ -61,10 +63,11 @@ private:
     String contentTypeForPath(const String& path) const;
     bool   serveFile(const char* path);
 
-    StorageManager* _storageManager = nullptr;
-    IrManager*      _irManager      = nullptr;
-    PowerManager*   _powerManager   = nullptr;
-    WifiKarma*      _karmaManager   = nullptr;
+    StorageManager* _storageManager  = nullptr;
+    IrManager*      _irManager       = nullptr;
+    PowerManager*   _powerManager    = nullptr;
+    WifiKarma*      _karmaManager    = nullptr;
+    DeviceSettings* _deviceSettings  = nullptr;
 
     DNSServer  _dnsServer;
     WebServer  _server;

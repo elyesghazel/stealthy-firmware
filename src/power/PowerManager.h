@@ -4,6 +4,7 @@
 class PowerManager {
 public:
     void begin(unsigned long sleepTimeoutMs);
+    void setSleepTimeout(unsigned long ms);
     void notifyUserActivity();
     void update();
 

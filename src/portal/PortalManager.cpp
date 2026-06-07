@@ -12,11 +12,13 @@
 #include "wifi/WifiKarma.h"
 
 PortalManager::PortalManager(StorageManager* storageManager, IrManager* irManager,
-                             PowerManager* powerManager, WifiKarma* karmaManager)
+                             PowerManager* powerManager, WifiKarma* karmaManager,
+                             DeviceSettings* deviceSettings)
     : _storageManager(storageManager),
       _irManager(irManager),
       _powerManager(powerManager),
       _karmaManager(karmaManager),
+      _deviceSettings(deviceSettings),
       _server(80) {
 }
 
@@ -248,15 +250,19 @@ void PortalManager::handleApiSettingsGet() {
     String tagline = esc(_storageManager->getBadgeTagline());
     String qrData  = esc(_storageManager->getBadgeQrData());
 
+    bool autostart = _storageManager->getPortalAutostart();
+    int  sleepIdx  = _deviceSettings ? _deviceSettings->sleepTimeoutIndex    : 1;
+    bool startScr  = _deviceSettings ? _deviceSettings->showStartScreen      : true;
+
     String json = "{";
     json += "\"ok\":true,";
     json += "\"badgeName\":\""    + name    + "\",";
     json += "\"badgeStatus\":\""  + status  + "\",";
     json += "\"badgeTagline\":\"" + tagline + "\",";
-    bool autostart = _storageManager->getPortalAutostart();
     json += "\"badgeQrData\":\""  + qrData  + "\",";
-    json += "\"portalAutostart\":";
-    json += autostart ? "true" : "false";
+    json += "\"portalAutostart\":"  + String(autostart ? "true" : "false") + ",";
+    json += "\"sleepTimeoutIndex\":" + String(sleepIdx) + ",";
+    json += "\"showStartScreen\":"   + String(startScr ? "true" : "false");
     json += "}";
 
     _server.send(200, "application/json", json);
@@ -287,6 +293,22 @@ void PortalManager::handleApiSettingsPost() {
     if (_server.hasArg("portalAutostart")) {
         String val = _server.arg("portalAutostart");
         _storageManager->setPortalAutostart(val == "1" || val == "true");
+    }
+
+    if (_deviceSettings && _server.hasArg("sleepTimeoutIndex")) {
+        int idx = constrain(_server.arg("sleepTimeoutIndex").toInt(), 0, 3);
+        _deviceSettings->sleepTimeoutIndex = idx;
+        if (_powerManager) {
+            static const unsigned long timeouts[] = {10000, 30000, 60000, 180000};
+            _powerManager->setSleepTimeout(timeouts[idx]);
+        }
+        _storageManager->saveDeviceSettings(*_deviceSettings);
+    }
+
+    if (_deviceSettings && _server.hasArg("showStartScreen")) {
+        String val = _server.arg("showStartScreen");
+        _deviceSettings->showStartScreen = (val == "1" || val == "true");
+        _storageManager->saveDeviceSettings(*_deviceSettings);
     }
 
     _server.send(200, "application/json", ok ? "{\"ok\":true}" : "{\"ok\":false}");

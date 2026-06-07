@@ -58,6 +58,28 @@
         <span class="toggle-track"></span>
       </label>
     </div>
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-label">Sleep Timeout</div>
+        <div class="setting-hint">How long before the device sleeps when idle</div>
+      </div>
+      <select id="sleep-timeout-select" class="input" style="width:90px">
+        <option value="0">10 s</option>
+        <option value="1">30 s</option>
+        <option value="2">1 min</option>
+        <option value="3">3 min</option>
+      </select>
+    </div>
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-label">Show Start Screen</div>
+        <div class="setting-hint">Animated boot splash on power-on</div>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="start-screen-toggle">
+        <span class="toggle-track"></span>
+      </label>
+    </div>
     <p class="note">Portal runs in AP+STA mode — WiFi tools stay active without disconnecting you.</p>
   </div>
 
