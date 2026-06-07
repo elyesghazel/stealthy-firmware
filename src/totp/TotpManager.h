@@ -11,7 +11,6 @@ class TotpManager {
 public:
     bool begin();
     void syncTime(unsigned long unixSeconds);
-    void tick();   // call from main loop — persists time to flash every 5 s
 
     bool          isTimeSynced()    const { return _timeSynced; }
     bool          isTimeFromFlash() const { return _timeFromFlash; }
@@ -34,10 +33,8 @@ private:
     unsigned long _timeOffset    = 0;
     bool          _timeSynced    = false;
     bool          _timeFromFlash = false;
-    unsigned long _lastTimeSaveMs = 0;
 
     static constexpr const char* PATH         = "/config/totp_accounts.txt";
     static constexpr const char* TIME_PATH    = "/config/totp_time.txt";
     static constexpr int         MAX_ACCOUNTS = 10;
-    static constexpr unsigned long SAVE_INTERVAL_MS = 5000;
 };

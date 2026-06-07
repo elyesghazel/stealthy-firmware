@@ -20,14 +20,6 @@ void TotpManager::saveTime() const {
     f.close();
 }
 
-void TotpManager::tick() {
-    if (!_timeSynced) return;
-    unsigned long now = millis();
-    if (now - _lastTimeSaveMs >= SAVE_INTERVAL_MS) {
-        _lastTimeSaveMs = now;
-        saveTime();
-    }
-}
 
 unsigned long TotpManager::currentUnixTime() const {
     return _timeOffset + (unsigned long)(millis() / 1000UL);

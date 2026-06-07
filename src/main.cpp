@@ -189,7 +189,6 @@ void loop() {
         appManager.handleButton(event);
     }
 
-    totpManager.tick();
     appManager.update();
     appManager.render(displayManager);
 
