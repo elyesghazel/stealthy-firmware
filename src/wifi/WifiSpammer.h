@@ -21,4 +21,6 @@ private:
     std::vector<String> _ssids;
     TaskHandle_t _taskHandle = nullptr;
     volatile bool _running = false;
+    wifi_interface_t _txIface = WIFI_IF_STA;
+    wifi_mode_t _modeBeforeStart = WIFI_MODE_NULL;
 };

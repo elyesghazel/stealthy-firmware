@@ -22,13 +22,18 @@ bool WifiSpammer::begin() {
         return false;
     }
 
-    // Ensure STA is available without killing a running AP (portal)
-    wifi_mode_t mode = WIFI_MODE_NULL;
-    esp_wifi_get_mode(&mode);
-    if (mode == WIFI_MODE_NULL)    WiFi.mode(WIFI_STA);
-    else if (mode == WIFI_MODE_AP) WiFi.mode(WIFI_AP_STA);
+    esp_wifi_get_mode(&_modeBeforeStart);
 
-    esp_wifi_set_channel(6, WIFI_SECOND_CHAN_NONE);
+    if (_modeBeforeStart == WIFI_MODE_AP || _modeBeforeStart == WIFI_MODE_APSTA) {
+        // Portal is running — stay on AP interface, don't touch the channel
+        _txIface = WIFI_IF_AP;
+        if (_modeBeforeStart == WIFI_MODE_AP) WiFi.mode(WIFI_AP_STA);
+    } else {
+        // No portal — bring up STA and pick a fixed channel
+        _txIface = WIFI_IF_STA;
+        if (_modeBeforeStart == WIFI_MODE_NULL) WiFi.mode(WIFI_STA);
+        esp_wifi_set_channel(6, WIFI_SECOND_CHAN_NONE);
+    }
 
     _running = true;
     BaseType_t ok = xTaskCreatePinnedToCore(
@@ -40,7 +45,7 @@ bool WifiSpammer::begin() {
         return false;
     }
 
-    Serial.printf("[WifiSpammer] started, %d SSIDs\n", (int)_ssids.size());
+    Serial.printf("[WifiSpammer] started iface=%d, %d SSIDs\n", (int)_txIface, (int)_ssids.size());
     return true;
 }
 
@@ -49,7 +54,14 @@ void WifiSpammer::stop() {
     _running = false;
     delay(150);
     _taskHandle = nullptr;
-    WiFi.mode(WIFI_OFF);
+    // Restore the WiFi mode that was active before we started
+    // (don't kill the portal AP if it was already running)
+    if (_modeBeforeStart == WIFI_MODE_AP || _modeBeforeStart == WIFI_MODE_APSTA) {
+        if (_modeBeforeStart == WIFI_MODE_AP) WiFi.mode(WIFI_AP);
+        // else APSTA — leave as-is, nothing changed
+    } else {
+        WiFi.mode(WIFI_OFF);
+    }
     Serial.println("[WifiSpammer] stopped");
 }
 
@@ -110,5 +122,5 @@ void WifiSpammer::sendBeacon(const char* ssid, uint8_t index, uint8_t channel) {
 
     frame[i++] = 0x03; frame[i++] = 0x01; frame[i++] = channel; // Tag: DS Param
 
-    esp_wifi_80211_tx(WIFI_IF_STA, frame, i, false);
+    esp_wifi_80211_tx(_txIface, frame, i, false);
 }
