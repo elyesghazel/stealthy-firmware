@@ -42,6 +42,7 @@ function setBtn(btn, text, disabled) {
 
 const TAB_LOADERS = {
   system:      () => { loadSystem(); loadAutostart(); },
+  profiles:    loadProfiles,
   badge:       loadBadge,
   'ir-lib':    loadIrLib,
   'ir-upload': loadIrUpload,
@@ -119,6 +120,60 @@ setInterval(async () => {
     document.getElementById('battery-display').textContent = v;
   }
 }, 5000);
+
+/* ── Profiles ──────────────────────────────────────────────────── */
+
+let _profileData  = null;
+let _editProfile  = 0;
+
+async function loadProfiles() {
+  const data = await api('/api/profiles');
+  if (!data.ok) return;
+  _profileData = data;
+  _editProfile = data.active;
+  renderProfileTabs();
+  renderProfileForm();
+}
+
+function renderProfileTabs() {
+  const container = document.getElementById('profile-tabs');
+  container.innerHTML = '';
+  for (let i = 0; i < _profileData.profiles.length; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'btn' + (i === _editProfile ? ' btn-primary' : '');
+    btn.textContent = _profileData.profiles[i].name || ('Profile ' + (i + 1));
+    if (i === _profileData.active) btn.textContent += ' ✓';
+    btn.addEventListener('click', () => { _editProfile = i; renderProfileTabs(); renderProfileForm(); });
+    container.appendChild(btn);
+  }
+}
+
+function renderProfileForm() {
+  const p = _profileData.profiles[_editProfile];
+  document.getElementById('pf-name').value    = p.name    || '';
+  document.getElementById('pf-tagline').value = p.tagline || '';
+  document.getElementById('pf-qr').value      = p.qrData  || '';
+  const btn = document.getElementById('pf-activate-btn');
+  btn.textContent = _editProfile === _profileData.active
+    ? 'Active on Device ✓' : 'Set as Active on Device';
+  btn.disabled = _editProfile === _profileData.active;
+}
+
+document.getElementById('profile-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  await apiPost('/api/profiles', {
+    index:   String(_editProfile),
+    name:    document.getElementById('pf-name').value,
+    tagline: document.getElementById('pf-tagline').value,
+    qrData:  document.getElementById('pf-qr').value,
+  });
+  await loadProfiles();
+});
+
+document.getElementById('pf-activate-btn').addEventListener('click', async function() {
+  await apiPost('/api/profiles/active', { index: String(_editProfile) });
+  await loadProfiles();
+});
 
 /* ── Badge ─────────────────────────────────────────────────────── */
 

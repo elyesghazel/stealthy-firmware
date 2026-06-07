@@ -71,6 +71,17 @@ public:
     bool getPortalAutostart() const;
     bool setPortalAutostart(bool enabled);
 
+    // Badge profiles (0–2)
+    static constexpr int PROFILE_COUNT = 3;
+    int  getActiveProfile() const;
+    bool setActiveProfile(int index);
+    String getProfileName(int index) const;
+    String getProfileTagline(int index) const;
+    String getProfileQrData(int index) const;
+    bool setProfileName(int index, const String& name);
+    bool setProfileTagline(int index, const String& tagline);
+    bool setProfileQrData(int index, const String& qrData);
+
     // Export a single saved capture as a Flipper Zero .ir file text
     String exportIrCaptureAsFlipperFormat(int id) const;
 
@@ -86,6 +97,7 @@ private:
     static constexpr const char* SPAM_SSIDS_PATH = "/config/spam_ssids.txt";
     static constexpr const char* PORTAL_AUTOSTART_PATH   = "/config/portal_autostart.txt";
     static constexpr const char* DEVICE_SETTINGS_PATH    = "/config/device_settings.txt";
+    static constexpr const char* ACTIVE_PROFILE_PATH     = "/config/active_profile.txt";
     static constexpr const char* PAYLOADS_DIR = "/payloads";
     static constexpr const char* IR_UPLOADS_DIR = "/ir/uploads";
     static constexpr const char* IR_DIR = "/ir/saved";

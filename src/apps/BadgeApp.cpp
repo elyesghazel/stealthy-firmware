@@ -77,11 +77,17 @@ void BadgeApp::onEnter() {
     Serial.println("[BadgeApp] enter");
     auto* ctx = _appManager ? _appManager->context() : nullptr;
     if (ctx && ctx->storage) {
-        _irCount   = (int)ctx->storage->listIrCaptures().size();
-        _ssidCount = (int)ctx->storage->loadSpamSSIDs().size();
+        _irCount       = (int)ctx->storage->listIrCaptures().size();
+        _ssidCount     = (int)ctx->storage->loadSpamSSIDs().size();
+        _activeProfile = ctx->storage->getActiveProfile();
+        _tagline       = ctx->storage->getProfileTagline(_activeProfile);
     } else {
         _irCount = _ssidCount = 0;
+        _activeProfile = 0;
     }
+    _scrollOffset     = 0;
+    _lastScrollMs     = millis();
+    _scrollPauseUntil = millis() + SCROLL_PAUSE_MS;
     _needsRender = true;
 }
 
@@ -91,11 +97,42 @@ void BadgeApp::onExit() {
 
 void BadgeApp::handleButton(const ButtonEvent& event) {
     if (!_appManager || event.action != ButtonAction::Press) return;
-    if (event.id == ButtonId::Back && _returnApp)
+
+    auto* stor = _appManager->context() ? _appManager->context()->storage : nullptr;
+
+    if (event.id == ButtonId::Back && _returnApp) {
         _appManager->switchTo(_returnApp);
+        return;
+    }
+
+    // Cycle profiles with Up/Down
+    if ((event.id == ButtonId::Up || event.id == ButtonId::Down) && stor) {
+        int dir = (event.id == ButtonId::Down) ? 1 : -1;
+        _activeProfile = (_activeProfile + dir + StorageManager::PROFILE_COUNT)
+                         % StorageManager::PROFILE_COUNT;
+        stor->setActiveProfile(_activeProfile);
+        _tagline       = stor->getProfileTagline(_activeProfile);
+        _scrollOffset  = 0;
+        _scrollPauseUntil = millis() + SCROLL_PAUSE_MS;
+        _needsRender   = true;
+    }
 }
 
-void BadgeApp::update() {}
+void BadgeApp::update() {
+    // Scroll tagline if longer than visible window
+    if ((int)_tagline.length() <= VISIBLE_CHARS) return;
+    if (millis() < _scrollPauseUntil) return;
+
+    if (millis() - _lastScrollMs >= SCROLL_INTERVAL_MS) {
+        _lastScrollMs = millis();
+        _scrollOffset++;
+        if (_scrollOffset > (int)_tagline.length() - VISIBLE_CHARS) {
+            _scrollOffset = 0;
+            _scrollPauseUntil = millis() + SCROLL_PAUSE_MS;
+        }
+        _needsRender = true;
+    }
+}
 
 // ─── Render ──────────────────────────────────────────────────────────────────
 
@@ -106,9 +143,8 @@ void BadgeApp::render(DisplayManager& display) {
     auto* ctx  = _appManager ? _appManager->context() : nullptr;
     auto* stor = ctx ? ctx->storage : nullptr;
 
-    String name    = stor ? stor->getBadgeName()    : "Stealthy";
-    String tagline = stor ? stor->getBadgeTagline() : "";
-    String qrData  = stor ? stor->getBadgeQrData()  : "";
+    String name    = stor ? stor->getProfileName(_activeProfile)    : "Stealthy";
+    String qrData  = stor ? stor->getProfileQrData(_activeProfile)  : "";
     float  voltage = (ctx && ctx->power) ? ctx->power->readBatteryVoltage() : 0.0f;
     int    pct     = (ctx && ctx->power) ? ctx->power->batteryPercent()     : 0;
 
@@ -117,9 +153,14 @@ void BadgeApp::render(DisplayManager& display) {
     int upH = (int)(upMs / 3600000UL);
     int upM = (int)((upMs % 3600000UL) / 60000UL);
 
-    // Clamp to fit left column (title font ≈12px/char, default font 6px/char)
-    if (name.length()    > 12) name    = name.substring(0, 12);
-    if (tagline.length() > 25) tagline = tagline.substring(0, 25);
+    // Clamp name; build visible tagline window (scrolled)
+    if (name.length() > 12) name = name.substring(0, 12);
+    String taglineView;
+    if ((int)_tagline.length() <= VISIBLE_CHARS) {
+        taglineView = _tagline;
+    } else {
+        taglineView = _tagline.substring(_scrollOffset, _scrollOffset + VISIBLE_CHARS);
+    }
 
     // ── Build QR once, before the page loop ──────────────────────────────────
     QRCode  qrcode;
@@ -170,9 +211,27 @@ void BadgeApp::render(DisplayManager& display) {
         // Thin separator under name
         display.fillRect(0, RULE_Y, LEFT_W, 1);
 
-        // Tagline (omit if empty)
-        if (!tagline.isEmpty())
-            display.drawText(MX, TAG_TY, tagline.c_str());
+        // Tagline with scroll indicator dot if scrolling
+        if (!taglineView.isEmpty()) {
+            display.drawText(MX, TAG_TY, taglineView.c_str());
+        }
+
+        // Profile indicator: "P1 P2 P3" at bottom-left, active one boxed
+        {
+            char profBuf[12];
+            for (int p = 0; p < StorageManager::PROFILE_COUNT; p++) {
+                snprintf(profBuf, sizeof(profBuf), "P%d", p + 1);
+                int px = MX + p * 20;
+                if (p == _activeProfile) {
+                    display.fillRect(px - 1, HINT_TY - 1, 14, 10);
+                    display.setTextWhite();
+                    display.drawText(px, HINT_TY, profBuf);
+                    display.setTextBlack();
+                } else {
+                    display.drawText(px, HINT_TY, profBuf);
+                }
+            }
+        }
 
         // Device stats
         display.drawText(MX, BAT_TY,  batBuf);
@@ -180,8 +239,6 @@ void BadgeApp::render(DisplayManager& display) {
         display.drawText(MX, WIFI_TY, wifiBuf);
         display.drawText(MX, UP_TY,   upBuf);
 
-        // Hint at bottom
-        display.drawText(MX, HINT_TY, "Back: exit");
 
         // ── Vertical divider ─────────────────────────────────────────────────
         display.fillRect(DIV_X, CONT_Y, 1, CONT_H);

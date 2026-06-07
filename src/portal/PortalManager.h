@@ -47,6 +47,10 @@ private:
     void handleApiWifiSsidsPost();
     void handleApiWifiStatus();
 
+    void handleApiProfilesGet();
+    void handleApiProfilesPost();
+    void handleApiProfilesSetActive();
+
     void handleApiFsList();
     void handleApiFileDownload();
     void handleApiFileUpload();

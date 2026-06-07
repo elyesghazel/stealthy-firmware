@@ -40,7 +40,8 @@ static const int PIN_BTN_BACK   = 13;
 static const int LED_BLUE       = 2;
 static const int LED_GREEN      = 1;
 
-static uint32_t _autoStartPortalAt = 0;
+static uint32_t _autoStartPortalAt   = 0;
+static uint32_t _lastBatteryCheckMs  = 0;
 
 // Drivers & managers
 AppContext     appContext;
@@ -155,7 +156,8 @@ void setup() {
         &irToolsApp, &portalApp, &wifiToolsApp
     );
 
-    appManager.begin(&startScreenApp, &appContext);
+    IApp* firstApp = deviceSettings.showStartScreen ? (IApp*)&startScreenApp : (IApp*)&badgeApp;
+    appManager.begin(firstApp, &appContext);
     appManager.setHomeApp(&mainMenuApp);
     ledManager.showSuccess();
 }
@@ -187,6 +189,14 @@ void loop() {
     if (millis() - lastPrint > 3000) {
         lastPrint = millis();
         Serial.printf("Battery: %.2f V\n", powerManager.readBatteryVoltage());
+    }
+
+    // Battery low warning: check every 30 s, trigger LED below 10 %
+    if (millis() - _lastBatteryCheckMs >= 30000) {
+        _lastBatteryCheckMs = millis();
+        if (powerManager.batteryPercent() <= 10) {
+            ledManager.showBatteryLow();
+        }
     }
 
     if (powerManager.shouldSleep()) {

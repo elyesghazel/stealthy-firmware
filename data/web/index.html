@@ -19,6 +19,7 @@
 
 <nav class="nav" role="tablist">
   <button class="nav-tab active" data-tab="system"    role="tab">System</button>
+  <button class="nav-tab"        data-tab="profiles"  role="tab">Profiles</button>
   <button class="nav-tab"        data-tab="badge"     role="tab">Badge</button>
   <button class="nav-tab"        data-tab="ir-lib"    role="tab">IR Library</button>
   <button class="nav-tab"        data-tab="ir-upload" role="tab">IR Upload</button>
@@ -81,6 +82,29 @@
       </label>
     </div>
     <p class="note">Portal runs in AP+STA mode — WiFi tools stay active without disconnecting you.</p>
+  </div>
+
+  <!-- ── Profiles ──────────────────────────────────────────── -->
+  <div class="pane" id="pane-profiles">
+    <div id="profile-tabs" style="display:flex;gap:8px;margin-bottom:16px"></div>
+    <form id="profile-form" novalidate>
+      <div class="form-group">
+        <label class="form-label">Name</label>
+        <input id="pf-name" type="text" class="input" maxlength="12" autocomplete="off" placeholder="Stealthy">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tagline</label>
+        <input id="pf-tagline" type="text" class="input" maxlength="120" autocomplete="off" placeholder="short bio or anything">
+      </div>
+      <div class="form-group">
+        <label class="form-label">QR Data</label>
+        <input id="pf-qr" type="text" class="input" maxlength="200" autocomplete="off" placeholder="https://... or contact info">
+      </div>
+      <button type="submit" class="btn btn-primary">Save Profile</button>
+    </form>
+    <div style="margin-top:12px">
+      <button id="pf-activate-btn" class="btn">Set as Active on Device</button>
+    </div>
   </div>
 
   <!-- ── Badge ─────────────────────────────────────────────── -->

@@ -64,6 +64,16 @@ void LedManager::showIrTransmit() {
     enterMode(Mode::IrTransmitPulse);
 }
 
+void LedManager::showBatteryLow() {
+    if (_driver == nullptr || _mode == Mode::BatteryLow) {
+        return;
+    }
+
+    _driver->setGreen(false);
+    _driver->setBlue(false);
+    enterMode(Mode::BatteryLow);
+}
+
 void LedManager::update() {
     if (_driver == nullptr) {
         return;
@@ -94,6 +104,16 @@ void LedManager::update() {
             if (now - _modeStartedMs >= 40) {
                 _driver->setBlue(false);
                 _mode = Mode::Idle;
+            }
+            break;
+
+        case Mode::BatteryLow:
+            // Slow blue double-blink every 3 s: on 80ms, off 120ms, on 80ms, off 2.7s
+            {
+                unsigned long t = (now - _modeStartedMs) % 3000;
+                bool on = (t < 80) || (t >= 200 && t < 280);
+                _driver->setBlue(on);
+                _driver->setGreen(false);
             }
             break;
     }

@@ -42,6 +42,17 @@ bool StorageManager::begin() {
         "badgeStatusIndex=0\n"
         "showStartScreen=1\n"
     );
+    ensureFile(ACTIVE_PROFILE_PATH, "0\n");
+    // Default profile names
+    ensureFile("/config/profile0_name.txt",    "Stealthy\n");
+    ensureFile("/config/profile0_tagline.txt", "\n");
+    ensureFile("/config/profile0_qr.txt",      "\n");
+    ensureFile("/config/profile1_name.txt",    "Profile 2\n");
+    ensureFile("/config/profile1_tagline.txt", "\n");
+    ensureFile("/config/profile1_qr.txt",      "\n");
+    ensureFile("/config/profile2_name.txt",    "Profile 3\n");
+    ensureFile("/config/profile2_tagline.txt", "\n");
+    ensureFile("/config/profile2_qr.txt",      "\n");
 
     return true;
 }
@@ -534,6 +545,60 @@ bool StorageManager::saveDeviceSettings(const DeviceSettings& s) {
     content += "badgeStatusIndex="     + String(s.badgeStatusIndex)     + "\n";
     content += "showStartScreen="      + String(s.showStartScreen ? 1 : 0) + "\n";
     return _fileSystemDriver->writeTextFile(DEVICE_SETTINGS_PATH, content);
+}
+
+int StorageManager::getActiveProfile() const {
+    if (!_available) return 0;
+    String v = _fileSystemDriver->readTextFile(ACTIVE_PROFILE_PATH);
+    v.trim();
+    int idx = v.toInt();
+    return constrain(idx, 0, PROFILE_COUNT - 1);
+}
+
+bool StorageManager::setActiveProfile(int index) {
+    if (!_available) return false;
+    return _fileSystemDriver->writeTextFile(ACTIVE_PROFILE_PATH,
+        String(constrain(index, 0, PROFILE_COUNT - 1)) + "\n");
+}
+
+static String profilePath(int index, const char* field) {
+    return String("/config/profile") + String(index) + "_" + field + ".txt";
+}
+
+String StorageManager::getProfileName(int index) const {
+    if (!_available) return "Profile " + String(index + 1);
+    String v = _fileSystemDriver->readTextFile(profilePath(index, "name").c_str());
+    v.trim();
+    return v.isEmpty() ? "Profile " + String(index + 1) : v;
+}
+
+String StorageManager::getProfileTagline(int index) const {
+    if (!_available) return "";
+    String v = _fileSystemDriver->readTextFile(profilePath(index, "tagline").c_str());
+    v.trim();
+    return v;
+}
+
+String StorageManager::getProfileQrData(int index) const {
+    if (!_available) return "";
+    String v = _fileSystemDriver->readTextFile(profilePath(index, "qr").c_str());
+    v.trim();
+    return v;
+}
+
+bool StorageManager::setProfileName(int index, const String& name) {
+    if (!_available) return false;
+    return _fileSystemDriver->writeTextFile(profilePath(index, "name").c_str(), name + "\n");
+}
+
+bool StorageManager::setProfileTagline(int index, const String& tagline) {
+    if (!_available) return false;
+    return _fileSystemDriver->writeTextFile(profilePath(index, "tagline").c_str(), tagline + "\n");
+}
+
+bool StorageManager::setProfileQrData(int index, const String& qrData) {
+    if (!_available) return false;
+    return _fileSystemDriver->writeTextFile(profilePath(index, "qr").c_str(), qrData + "\n");
 }
 
 bool StorageManager::getPortalAutostart() const {

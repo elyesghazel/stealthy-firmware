@@ -166,6 +166,10 @@ void PortalManager::setupRoutes() {
     _server.on("/api/wifi/ssids",  HTTP_POST, [this]() { handleApiWifiSsidsPost(); });
     _server.on("/api/wifi/status", HTTP_GET,  [this]() { handleApiWifiStatus(); });
 
+    _server.on("/api/profiles",        HTTP_GET,  [this]() { handleApiProfilesGet(); });
+    _server.on("/api/profiles",        HTTP_POST, [this]() { handleApiProfilesPost(); });
+    _server.on("/api/profiles/active", HTTP_POST, [this]() { handleApiProfilesSetActive(); });
+
     _server.on("/api/fs/list",      HTTP_GET,  [this]() { handleApiFsList(); });
     _server.on("/api/file/download",HTTP_GET,  [this]() { handleApiFileDownload(); });
     _server.on("/api/file/delete",  HTTP_POST, [this]() { handleApiFileDelete(); });
@@ -616,6 +620,54 @@ void PortalManager::handleApiWifiStatus() {
     }
     String json = "{\"ok\":true,\"ssidCount\":" + String(count) + "}";
     _server.send(200, "application/json", json);
+}
+
+void PortalManager::handleApiProfilesGet() {
+    if (!_storageManager) {
+        _server.send(500, "application/json", "{\"ok\":false}");
+        return;
+    }
+    auto esc = [](String s) -> String {
+        s.replace("\\", "\\\\"); s.replace("\"", "\\\""); return s;
+    };
+    int active = _storageManager->getActiveProfile();
+    String json = "{\"ok\":true,\"active\":" + String(active) + ",\"profiles\":[";
+    for (int i = 0; i < StorageManager::PROFILE_COUNT; i++) {
+        if (i > 0) json += ",";
+        json += "{\"index\":" + String(i)
+             + ",\"name\":\""    + esc(_storageManager->getProfileName(i))    + "\""
+             + ",\"tagline\":\"" + esc(_storageManager->getProfileTagline(i)) + "\""
+             + ",\"qrData\":\""  + esc(_storageManager->getProfileQrData(i))  + "\""
+             + "}";
+    }
+    json += "]}";
+    _server.send(200, "application/json", json);
+}
+
+void PortalManager::handleApiProfilesPost() {
+    if (!_storageManager) {
+        _server.send(500, "application/json", "{\"ok\":false}");
+        return;
+    }
+    int idx = constrain(_server.arg("index").toInt(), 0, StorageManager::PROFILE_COUNT - 1);
+    String name    = _server.arg("name");
+    String tagline = _server.arg("tagline");
+    String qrData  = _server.arg("qrData");
+    if (name.length() > 12) name = name.substring(0, 12);
+    _storageManager->setProfileName(idx, name);
+    _storageManager->setProfileTagline(idx, tagline);
+    _storageManager->setProfileQrData(idx, qrData);
+    _server.send(200, "application/json", "{\"ok\":true}");
+}
+
+void PortalManager::handleApiProfilesSetActive() {
+    if (!_storageManager) {
+        _server.send(500, "application/json", "{\"ok\":false}");
+        return;
+    }
+    int idx = constrain(_server.arg("index").toInt(), 0, StorageManager::PROFILE_COUNT - 1);
+    _storageManager->setActiveProfile(idx);
+    _server.send(200, "application/json", "{\"ok\":true}");
 }
 
 void PortalManager::handleApiIrImport() {

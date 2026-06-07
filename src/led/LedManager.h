@@ -14,13 +14,15 @@ public:
     void showBooting();
     void showSuccess();
     void showIrTransmit();
+    void showBatteryLow();
 
 private:
     enum class Mode {
         Idle,
         Booting,
         SuccessPulse,
-        IrTransmitPulse
+        IrTransmitPulse,
+        BatteryLow
     };
 
     LedDriver* _driver = nullptr;
