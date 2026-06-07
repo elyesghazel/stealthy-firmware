@@ -103,8 +103,8 @@ void SettingsApp::applyAndSave() {
     if (storage) storage->saveDeviceSettings(*_settings);
 
     if (power) {
-        static const unsigned long timeouts[] = {10000, 30000, 60000, 180000};
-        power->setSleepTimeout(timeouts[constrain(_settings->sleepTimeoutIndex, 0, 3)]);
+        static const unsigned long timeouts[] = {10000, 30000, 60000, 180000, 300000, 600000};
+        power->setSleepTimeout(timeouts[constrain(_settings->sleepTimeoutIndex, 0, 5)]);
     }
 
     // Keep badge status in sync with StorageManager (read by BadgeApp)
@@ -313,7 +313,7 @@ void SettingsApp::moveDown() {
     bool changed = false;
     switch (_selectedIndex) {
         case 0:
-            if (_settings->sleepTimeoutIndex < 3) { _settings->sleepTimeoutIndex++; changed = true; }
+            if (_settings->sleepTimeoutIndex < 5) { _settings->sleepTimeoutIndex++; changed = true; }
             break;
         case 1:
             if (_settings->refreshIntervalIndex < 2) { _settings->refreshIntervalIndex++; changed = true; }
@@ -369,7 +369,7 @@ const char* SettingsApp::currentValueText(int index) const {
 
     switch (index) {
         case 0: {
-            static const char* options[] = {"10s", "30s", "1m", "3m"};
+            static const char* options[] = {"10s", "30s", "1m", "3m", "5m", "10m"};
             return options[_settings->sleepTimeoutIndex];
         }
 

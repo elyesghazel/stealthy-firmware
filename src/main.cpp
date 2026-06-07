@@ -129,8 +129,8 @@ void setup() {
     // Load persisted settings; apply sleep timeout immediately
     storageManager.loadDeviceSettings(deviceSettings);
     {
-        static const unsigned long timeouts[] = {10000, 30000, 60000, 180000};
-        int idx = constrain(deviceSettings.sleepTimeoutIndex, 0, 3);
+        static const unsigned long timeouts[] = {10000, 30000, 60000, 180000, 300000, 600000};
+        int idx = constrain(deviceSettings.sleepTimeoutIndex, 0, 5);
         powerManager.setSleepTimeout(timeouts[idx]);
     }
 

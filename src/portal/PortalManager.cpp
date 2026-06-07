@@ -300,10 +300,10 @@ void PortalManager::handleApiSettingsPost() {
     }
 
     if (_deviceSettings && _server.hasArg("sleepTimeoutIndex")) {
-        int idx = constrain(_server.arg("sleepTimeoutIndex").toInt(), 0, 3);
+        int idx = constrain(_server.arg("sleepTimeoutIndex").toInt(), 0, 5);
         _deviceSettings->sleepTimeoutIndex = idx;
         if (_powerManager) {
-            static const unsigned long timeouts[] = {10000, 30000, 60000, 180000};
+            static const unsigned long timeouts[] = {10000, 30000, 60000, 180000, 300000, 600000};
             _powerManager->setSleepTimeout(timeouts[idx]);
         }
         _storageManager->saveDeviceSettings(*_deviceSettings);
