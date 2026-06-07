@@ -15,10 +15,10 @@ public:
 private:
     static constexpr int MAX_EVENTS = 16;
 
-    static constexpr unsigned long DEBOUNCE_MS = 25;
+    static constexpr unsigned long DEBOUNCE_MS = 8;
     static constexpr unsigned long LONG_PRESS_MS = 700;
-    static constexpr unsigned long REPEAT_START_MS = 180;
-    static constexpr unsigned long REPEAT_INTERVAL_MS = 65;
+    static constexpr unsigned long REPEAT_START_MS = 100;
+    static constexpr unsigned long REPEAT_INTERVAL_MS = 40;
 
     struct ButtonState {
         int pin = -1;

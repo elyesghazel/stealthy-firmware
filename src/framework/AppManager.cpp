@@ -25,7 +25,24 @@ void AppManager::switchTo(IApp* nextApp) {
     }
 }
 
+void AppManager::setHomeApp(IApp* homeApp) {
+    _homeApp = homeApp;
+}
+
+void AppManager::goHome() {
+    if (_homeApp) switchTo(_homeApp);
+}
+
 void AppManager::handleButton(const ButtonEvent& event) {
+    // Global shortcut: long-press Back → main menu (from any app except home itself)
+    if (event.id == ButtonId::Back &&
+        event.action == ButtonAction::LongPress &&
+        _currentApp != _homeApp &&
+        _homeApp != nullptr) {
+        switchTo(_homeApp);
+        return;
+    }
+
     if (_currentApp) {
         _currentApp->handleButton(event);
     }

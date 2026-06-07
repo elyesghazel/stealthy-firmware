@@ -148,6 +148,7 @@ void setup() {
     );
 
     appManager.begin(&startScreenApp, &appContext);
+    appManager.setHomeApp(&mainMenuApp);
     ledManager.showSuccess();
 }
 

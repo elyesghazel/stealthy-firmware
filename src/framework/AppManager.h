@@ -6,6 +6,8 @@ class AppManager {
 public:
     void begin(IApp* initialApp, AppContext* context);
     void switchTo(IApp* nextApp);
+    void setHomeApp(IApp* homeApp);
+    void goHome();
 
     void handleButton(const ButtonEvent& event);
     void update();
@@ -17,6 +19,7 @@ public:
 
 private:
     IApp* _currentApp = nullptr;
+    IApp* _homeApp    = nullptr;
 
     AppContext* _context = nullptr;
 };
