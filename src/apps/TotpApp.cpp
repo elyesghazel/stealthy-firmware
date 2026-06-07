@@ -178,6 +178,11 @@ void TotpApp::drawContent(DisplayManager& display) {
         return;
     }
 
+    // ── "~" indicator when time is from flash (approximate) ─────────────────
+    if (_totp->isTimeFromFlash()) {
+        display.drawText(display.width() - 10, NAME_Y, "~");
+    }
+
     // ── Account name (centered) ──────────────────────────────────────────────
     const String& name = _totp->accounts()[_selectedIndex].name;
     // Center: each default-font char ≈ 6px wide
