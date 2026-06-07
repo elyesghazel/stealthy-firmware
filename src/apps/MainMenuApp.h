@@ -42,12 +42,12 @@ private:
 
     const char* _items[ITEM_COUNT] = {
         "Badge",
-        "Settings",
-        "About",
         "Captive Portal",
         "IR Tools",
         "WiFi Tools",
-        "TOTP"
+        "TOTP",
+        "About",
+        "Settings"
     };
 
     int _selectedIndex    = 0;

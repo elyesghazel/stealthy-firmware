@@ -74,12 +74,12 @@ void MainMenuApp::handleButton(const ButtonEvent& event) {
             if (event.action != ButtonAction::Press || !_appManager) break;
             switch (_selectedIndex) {
                 case 0: if (_badgeApp)     _appManager->switchTo(_badgeApp);     break;
-                case 1: if (_settingsApp)  _appManager->switchTo(_settingsApp);  break;
-                case 2: if (_aboutApp)     _appManager->switchTo(_aboutApp);     break;
-                case 3: if (_portalApp)    _appManager->switchTo(_portalApp);    break;
-                case 4: if (_irToolsApp)   _appManager->switchTo(_irToolsApp);   break;
-                case 5: if (_wifiToolsApp) _appManager->switchTo(_wifiToolsApp); break;
-                case 6: if (_totpApp)      _appManager->switchTo(_totpApp);      break;
+                case 1: if (_portalApp)    _appManager->switchTo(_portalApp);    break;
+                case 2: if (_irToolsApp)   _appManager->switchTo(_irToolsApp);   break;
+                case 3: if (_wifiToolsApp) _appManager->switchTo(_wifiToolsApp); break;
+                case 4: if (_totpApp)      _appManager->switchTo(_totpApp);      break;
+                case 5: if (_aboutApp)     _appManager->switchTo(_aboutApp);     break;
+                case 6: if (_settingsApp)  _appManager->switchTo(_settingsApp);  break;
             }
             break;
     }
