@@ -1,5 +1,6 @@
 #include "StorageManager.h"
 #include "ir/FlipperIrParser.h"
+#include "ir/FlipperIrSerializer.h"
 
 StorageManager::StorageManager(FileSystemDriver* fileSystemDriver)
     : _fileSystemDriver(fileSystemDriver) {
@@ -490,6 +491,32 @@ int StorageManager::importFlipperFile(const String& path) {
 
     Serial.printf("[Storage] Flipper import from %s: %d signal(s)\n", path.c_str(), imported);
     return imported;
+}
+
+bool StorageManager::getPortalAutostart() const {
+    if (!_available) return false;
+    String v = _fileSystemDriver->readTextFile(PORTAL_AUTOSTART_PATH);
+    v.trim();
+    return v == "1";
+}
+
+bool StorageManager::setPortalAutostart(bool enabled) {
+    if (!_available) return false;
+    return _fileSystemDriver->writeTextFile(PORTAL_AUTOSTART_PATH, enabled ? "1" : "0");
+}
+
+String StorageManager::exportIrCaptureAsFlipperFormat(int id) const {
+    if (!_available) return "";
+    String fileId = makeFileId(id);
+    IrCapture capture;
+    if (!loadIrCaptureById(id, capture)) return "";
+    String name = _fileSystemDriver->readTextFile(makeIrNamePath(fileId).c_str());
+    name.trim();
+    if (name.isEmpty()) name = "Signal";
+
+    std::vector<String>    names    = { name };
+    std::vector<IrCapture> captures = { capture };
+    return FlipperIrSerializer::serializeFile(names, captures);
 }
 
 bool StorageManager::deleteIrCaptureById(int id) {

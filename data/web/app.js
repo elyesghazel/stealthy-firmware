@@ -41,12 +41,12 @@ function setBtn(btn, text, disabled) {
 /* ── Tab switching ─────────────────────────────────────────────── */
 
 const TAB_LOADERS = {
-  system:     loadSystem,
-  badge:      loadBadge,
-  'ir-lib':   loadIrLib,
+  system:      () => { loadSystem(); loadAutostart(); },
+  badge:       loadBadge,
+  'ir-lib':    loadIrLib,
   'ir-upload': loadIrUpload,
-  flood:      loadFlood,
-  recon:      loadRecon,
+  flood:       loadFlood,
+  recon:       loadRecon,
 };
 
 document.querySelectorAll('.nav-tab').forEach(btn => {
@@ -87,6 +87,17 @@ async function loadSystem() {
     document.getElementById('sys-ip').textContent     = status.ip     || '--';
   }
 }
+
+async function loadAutostart() {
+  const data = await api('/api/settings');
+  if (!data.ok) return;
+  const toggle = document.getElementById('autostart-toggle');
+  if (toggle) toggle.checked = !!data.portalAutostart;
+}
+
+document.getElementById('autostart-toggle').addEventListener('change', async function() {
+  await apiPost('/api/settings', { portalAutostart: this.checked ? '1' : '0' });
+});
 
 setInterval(async () => {
   const bat = await api('/api/battery');
@@ -180,9 +191,12 @@ function buildIrRow(item) {
 
   const sendBtn   = makeBtn('Send',   () => irSend(item.id, sendBtn, row));
   const renameBtn = makeBtn('Rename', () => startRename(row, item));
+  const exportBtn = makeBtn('Export', () => {
+    window.location.href = '/api/ir/export?id=' + item.id;
+  });
   const delBtn    = makeBtn('Delete', () => irDelete(item.id, item.name, row), true);
 
-  actions.append(sendBtn, renameBtn, delBtn);
+  actions.append(sendBtn, renameBtn, exportBtn, delBtn);
   row.append(info, actions);
   return row;
 }
@@ -418,8 +432,9 @@ function buildFileRow(entry) {
   acts.className = 'file-actions';
 
   if (entry.name.toLowerCase().endsWith('.ir')) {
-    const importBtn = makeBtn('Import', () => irImport(entry.path, importBtn, row));
-    acts.append(importBtn);
+    const importBtn  = makeBtn('Import', () => irImport(entry.path, importBtn, row));
+    const browseBtn  = makeBtn('Browse', () => toggleSignalBrowser(row, entry.name, browseBtn));
+    acts.append(importBtn, browseBtn);
   }
 
   const dlBtn = makeBtn('Download', () => {
@@ -445,6 +460,45 @@ function buildFileRow(entry) {
   acts.append(dlBtn, delBtn);
   row.append(name, acts);
   return row;
+}
+
+async function toggleSignalBrowser(row, filename, btn) {
+  let panel = row.nextElementSibling;
+  if (panel && panel.classList.contains('signal-panel')) {
+    panel.remove();
+    setBtn(btn, 'Browse', false);
+    return;
+  }
+  setBtn(btn, '…', true);
+  const data = await api('/api/ir/upload-signals?filename=' + encodeURIComponent(filename));
+  setBtn(btn, 'Browse', false);
+  if (!data.ok || !data.signals) {
+    rowFeedback(row, 'Failed to load signals.', true);
+    return;
+  }
+  if (!data.signals.length) {
+    rowFeedback(row, 'No signals found in file.', false);
+    return;
+  }
+  panel = document.createElement('div');
+  panel.className = 'signal-panel';
+  data.signals.forEach(sig => {
+    const srow = document.createElement('div');
+    srow.className = 'signal-row';
+    const sname = document.createElement('span');
+    sname.className = 'signal-name';
+    sname.textContent = sig.name;
+    const sendBtn = makeBtn('Send', async () => {
+      setBtn(sendBtn, '…', true);
+      const r = await apiPost('/api/ir/send-upload', { filename, index: sig.index });
+      setBtn(sendBtn, 'Send', false);
+      if (r.ok) toast('Sent: ' + sig.name);
+      else      toast('Send failed.', 'err');
+    });
+    srow.append(sname, sendBtn);
+    panel.appendChild(srow);
+  });
+  row.after(panel);
 }
 
 /* ── Flood (Beacon Spam) ───────────────────────────────────────── */
@@ -640,3 +694,4 @@ async function loadKarmaStatus() {
 
 /* ── Init ──────────────────────────────────────────────────────── */
 loadSystem();
+loadAutostart();

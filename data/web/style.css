@@ -521,3 +521,73 @@ code {
 }
 
 .hidden { display: none !important; }
+
+/* ── Signal browser panel ─────────────────────────────────────── */
+.signal-panel {
+  border-left: 2px solid var(--border);
+  margin: 2px 0 6px 12px;
+  padding: 4px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.signal-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 10px;
+  border-radius: 4px;
+  gap: 8px;
+}
+.signal-row:hover { background: var(--surface); }
+.signal-name {
+  font-size: .82rem;
+  color: var(--text);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Setting row (autostart toggle etc.) ─────────────────────── */
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+  margin-top: 12px;
+}
+.setting-info { flex: 1; }
+.setting-label { font-size: .88rem; font-weight: 500; color: var(--text); }
+.setting-hint  { font-size: .76rem; color: var(--text-muted); margin-top: 2px; }
+
+/* ── Toggle switch ───────────────────────────────────────────── */
+.toggle-switch {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  background: var(--border);
+  border-radius: 11px;
+  transition: background .2s;
+}
+.toggle-switch input:checked + .toggle-track { background: var(--accent); }
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform .2s;
+}
+.toggle-switch input:checked + .toggle-track::after { transform: translateX(18px); }

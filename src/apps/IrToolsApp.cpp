@@ -227,7 +227,7 @@ void IrToolsApp::moveUp() {
         clampMenuScroll();
 
         _partialUpdateCount++;
-        if (_partialUpdateCount >= 20) {
+        if (_partialUpdateCount >= 35) {
             _partialUpdateCount = 0;
             requestFullRender();
         } else {
@@ -250,7 +250,7 @@ void IrToolsApp::moveUp() {
         clampSavedScroll();
 
         _partialUpdateCount++;
-        if (_partialUpdateCount >= 20) {
+        if (_partialUpdateCount >= 35) {
             _partialUpdateCount = 0;
             requestFullRender();
         } else {
@@ -309,7 +309,7 @@ void IrToolsApp::moveDown() {
         clampSavedScroll();
 
         _partialUpdateCount++;
-        if (_partialUpdateCount >= 20) {
+        if (_partialUpdateCount >= 35) {
             _partialUpdateCount = 0;
             requestFullRender();
         } else {
@@ -491,8 +491,15 @@ void IrToolsApp::drawMenu(DisplayManager& display) {
 
         const int y = rowBaselineY(visibleRow);
 
-        display.drawText(CARET_X, y, (itemIndex == _selectedIndex) ? ">" : " ");
-        display.drawText(LABEL_X, y, _menuItems[itemIndex]);
+        if (itemIndex == _selectedIndex) {
+            display.fillRect(CARET_X - 2, y - 2, display.width() - (CARET_X - 2), 12);
+            display.setTextWhite();
+            display.drawText(CARET_X, y, ">");
+            display.drawText(LABEL_X, y, _menuItems[itemIndex]);
+            display.setTextBlack();
+        } else {
+            display.drawText(LABEL_X, y, _menuItems[itemIndex]);
+        }
     }
 
     if (_menuScrollOffset > 0) {
@@ -520,8 +527,14 @@ void IrToolsApp::drawUploadList(DisplayManager& display) {
         int i = _uploadScrollOffset + v;
         if (i >= (int)_uploadItems.size()) break;
         const int y = rowBaselineY(v);
-        display.drawText(CARET_X, y, (i == _uploadSelectedIndex) ? ">" : " ");
-        display.drawText(LABEL_X, y, _uploadItems[i].displayName);
+        if (i == _uploadSelectedIndex) {
+            display.fillRect(CARET_X - 2, y - 2, display.width() - (CARET_X - 2), 12);
+            display.setTextWhite();
+            display.drawText(LABEL_X, y, _uploadItems[i].displayName);
+            display.setTextBlack();
+        } else {
+            display.drawText(LABEL_X, y, _uploadItems[i].displayName);
+        }
     }
 
     if (_uploadScrollOffset > 0)
@@ -529,7 +542,8 @@ void IrToolsApp::drawUploadList(DisplayManager& display) {
     if (_uploadScrollOffset + VISIBLE_ITEMS < (int)_uploadItems.size())
         display.drawText(6, SCROLL_BOTTOM_Y, "v");
 
-    display.drawText(10, FOOTER_Y, "Sel=open  Back=menu");
+    String posStr = String(_uploadSelectedIndex + 1) + "/" + String(_uploadItems.size());
+    display.drawText(10, FOOTER_Y, (posStr + "  Sel=open  Back").c_str());
 }
 
 void IrToolsApp::drawUploadSignals(DisplayManager& display) {
@@ -546,8 +560,14 @@ void IrToolsApp::drawUploadSignals(DisplayManager& display) {
         int i = _signalScrollOffset + v;
         if (i >= (int)_uploadSignals.size()) break;
         const int y = rowBaselineY(v);
-        display.drawText(CARET_X, y, (i == _signalSelectedIndex) ? ">" : " ");
-        display.drawText(LABEL_X, y, _uploadSignals[i].name);
+        if (i == _signalSelectedIndex) {
+            display.fillRect(CARET_X - 2, y - 2, display.width() - (CARET_X - 2), 12);
+            display.setTextWhite();
+            display.drawText(LABEL_X, y, _uploadSignals[i].name);
+            display.setTextBlack();
+        } else {
+            display.drawText(LABEL_X, y, _uploadSignals[i].name);
+        }
     }
 
     if (_signalScrollOffset > 0)
@@ -555,7 +575,8 @@ void IrToolsApp::drawUploadSignals(DisplayManager& display) {
     if (_signalScrollOffset + VISIBLE_ITEMS < (int)_uploadSignals.size())
         display.drawText(6, SCROLL_BOTTOM_Y, "v");
 
-    display.drawText(10, FOOTER_Y, "Sel=send  Back=files");
+    String posStr = String(_signalSelectedIndex + 1) + "/" + String(_uploadSignals.size());
+    display.drawText(10, FOOTER_Y, (posStr + "  Sel=send  Back").c_str());
 }
 
 void IrToolsApp::drawCapturedInfo(DisplayManager& display) {
@@ -620,8 +641,14 @@ void IrToolsApp::drawSavedList(DisplayManager& display) {
 
         const int y = rowBaselineY(visibleRow);
 
-        display.drawText(CARET_X, y, (itemIndex == _savedSelectedIndex) ? ">" : " ");
-        display.drawText(LABEL_X, y, _savedItems[itemIndex].name);
+        if (itemIndex == _savedSelectedIndex) {
+            display.fillRect(CARET_X - 2, y - 2, display.width() - (CARET_X - 2), 12);
+            display.setTextWhite();
+            display.drawText(LABEL_X, y, _savedItems[itemIndex].name);
+            display.setTextBlack();
+        } else {
+            display.drawText(LABEL_X, y, _savedItems[itemIndex].name);
+        }
     }
 
     if (_savedScrollOffset > 0) {
@@ -632,7 +659,8 @@ void IrToolsApp::drawSavedList(DisplayManager& display) {
         display.drawText(6, SCROLL_BOTTOM_Y, "v");
     }
 
-    display.drawText(10, FOOTER_Y, "Sel=replay  Back=menu");
+    String posStr = String(_savedSelectedIndex + 1) + "/" + String(_savedItems.size());
+    display.drawText(10, FOOTER_Y, (posStr + "  Sel=send  Back").c_str());
 }
 
 void IrToolsApp::saveLastCapture() {
@@ -673,7 +701,11 @@ void IrToolsApp::renderFull(DisplayManager& display) {
 
         display.setTitleFont();
         display.setTextBlack();
-        display.drawText(TITLE_X, TITLE_Y, "IR Tools");
+        const char* title = "IR Tools";
+        if (_mode == Mode::SavedList)     title = "Saved IR";
+        if (_mode == Mode::UploadList)    title = "IR Upload";
+        if (_mode == Mode::UploadSignals) title = "Signals";
+        display.drawText(TITLE_X, TITLE_Y, title);
 
         if (_mode == Mode::Menu) {
             drawMenu(display);

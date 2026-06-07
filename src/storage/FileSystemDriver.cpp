@@ -19,13 +19,16 @@ String FileSystemDriver::readTextFile(const char* path) const {
     if (!_mounted) return "";
 
     File file = LittleFS.open(path, "r");
-    if (!file || file.isDirectory()) {
-        return "";
-    }
+    if (!file || file.isDirectory()) return "";
 
     String content;
+    content.reserve(file.size() + 1);
+
+    uint8_t buf[512];
     while (file.available()) {
-        content += (char)file.read();
+        int n = file.read(buf, sizeof(buf));
+        if (n <= 0) break;
+        for (int i = 0; i < n; i++) content += (char)buf[i];
     }
 
     file.close();

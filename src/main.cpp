@@ -40,6 +40,8 @@ static const int PIN_BTN_BACK   = 13;
 static const int LED_BLUE       = 2;
 static const int LED_GREEN      = 1;
 
+static uint32_t _autoStartPortalAt = 0;
+
 // Drivers & managers
 AppContext     appContext;
 FileSystemDriver fileSystemDriver;
@@ -123,6 +125,11 @@ void setup() {
 
     initFileSystem();
 
+    if (storageManager.getPortalAutostart()) {
+        _autoStartPortalAt = millis() + 2500;
+        Serial.println("[Boot] portal autostart scheduled");
+    }
+
     // App setup
     startScreenApp.setup(&appManager, &mainMenuApp);
     badgeApp.setup(&appManager, &mainMenuApp);
@@ -145,6 +152,14 @@ void setup() {
 }
 
 void loop() {
+    if (_autoStartPortalAt > 0 && millis() >= _autoStartPortalAt) {
+        _autoStartPortalAt = 0;
+        if (!portalManager.isRunning()) {
+            portalManager.begin();
+            Serial.println("[Boot] portal autostarted");
+        }
+    }
+
     buttonManager.update();
     powerManager.update();
     ledManager.update();

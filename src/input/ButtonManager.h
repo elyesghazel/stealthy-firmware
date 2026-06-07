@@ -17,8 +17,8 @@ private:
 
     static constexpr unsigned long DEBOUNCE_MS = 25;
     static constexpr unsigned long LONG_PRESS_MS = 700;
-    static constexpr unsigned long REPEAT_START_MS = 300;
-    static constexpr unsigned long REPEAT_INTERVAL_MS = 110;
+    static constexpr unsigned long REPEAT_START_MS = 180;
+    static constexpr unsigned long REPEAT_INTERVAL_MS = 65;
 
     struct ButtonState {
         int pin = -1;

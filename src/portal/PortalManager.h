@@ -37,6 +37,9 @@ private:
     void handleApiIrRename();
     void handleApiIrDelete();
     void handleApiIrImport();
+    void handleApiIrUploadSignals();
+    void handleApiIrSendUpload();
+    void handleApiIrExport();
 
     void handleApiWifiSsidsGet();
     void handleApiWifiSsidsPost();

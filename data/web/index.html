@@ -48,6 +48,16 @@
         <div class="card-value dim" id="sys-ip">--</div>
       </div>
     </div>
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-label">Portal Autostart</div>
+        <div class="setting-hint">Start portal automatically ~2.5s after boot</div>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="autostart-toggle">
+        <span class="toggle-track"></span>
+      </label>
+    </div>
     <p class="note">Portal runs in AP+STA mode — WiFi tools stay active without disconnecting you.</p>
   </div>
 
@@ -56,7 +66,7 @@
     <form id="badge-form" novalidate>
       <div class="form-group">
         <label class="form-label" for="badge-name">Badge Name</label>
-        <input id="badge-name" type="text" class="input" maxlength="32"
+        <input id="badge-name" type="text" class="input" maxlength="12"
                autocomplete="off" placeholder="stealthy-unit-01">
       </div>
       <div class="form-group">

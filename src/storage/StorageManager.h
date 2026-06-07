@@ -63,6 +63,13 @@ public:
     // Import all signals from a Flipper Zero .ir file; returns count imported
     int importFlipperFile(const String& path);
 
+    // Portal autostart setting
+    bool getPortalAutostart() const;
+    bool setPortalAutostart(bool enabled);
+
+    // Export a single saved capture as a Flipper Zero .ir file text
+    String exportIrCaptureAsFlipperFormat(int id) const;
+
 private:
     FileSystemDriver* _fileSystemDriver = nullptr;
     bool _available = false;
@@ -73,6 +80,7 @@ private:
     static constexpr const char* QR_DATA_PATH    = "/config/qr_data.txt";
     static constexpr const char* BADGE_MODE_PATH = "/config/badge_mode.txt";
     static constexpr const char* SPAM_SSIDS_PATH = "/config/spam_ssids.txt";
+    static constexpr const char* PORTAL_AUTOSTART_PATH = "/config/portal_autostart.txt";
     static constexpr const char* PAYLOADS_DIR = "/payloads";
     static constexpr const char* IR_UPLOADS_DIR = "/ir/uploads";
     static constexpr const char* IR_DIR = "/ir/saved";

@@ -99,8 +99,15 @@ void WifiToolsApp::drawMenu(DisplayManager& display) {
 
     for (int r = 0; r < ITEM_COUNT; r++) {
         int y = rowBaselineY(r);
-        display.drawText(CARET_X, y, r == _selectedIndex ? ">" : " ");
-        display.drawText(LABEL_X, y, _items[r]);
+        if (r == _selectedIndex) {
+            display.fillRect(CARET_X - 2, y - 2, display.width() - (CARET_X - 2), 12);
+            display.setTextWhite();
+            display.drawText(CARET_X, y, ">");
+            display.drawText(LABEL_X, y, _items[r]);
+            display.setTextBlack();
+        } else {
+            display.drawText(LABEL_X, y, _items[r]);
+        }
     }
 }
 

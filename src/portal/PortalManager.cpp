@@ -8,6 +8,7 @@
 #include "ir/IrManager.h"
 #include "power/PowerManager.h"
 #include "ir/IrDriver.h"
+#include "ir/FlipperIrSerializer.h"
 #include "wifi/WifiKarma.h"
 
 PortalManager::PortalManager(StorageManager* storageManager, IrManager* irManager,
@@ -122,6 +123,10 @@ void PortalManager::update() {
 
     _dnsServer.processNextRequest();
     _server.handleClient();
+
+    if (_powerManager && WiFi.softAPgetStationNum() > 0) {
+        _powerManager->notifyUserActivity();
+    }
 }
 
 bool PortalManager::isRunning() const {
@@ -151,6 +156,9 @@ void PortalManager::setupRoutes() {
     _server.on("/api/ir/rename", HTTP_POST, [this]() { handleApiIrRename(); });
     _server.on("/api/ir/delete", HTTP_POST, [this]() { handleApiIrDelete(); });
     _server.on("/api/ir/import", HTTP_POST, [this]() { handleApiIrImport(); });
+    _server.on("/api/ir/upload-signals", HTTP_GET,  [this]() { handleApiIrUploadSignals(); });
+    _server.on("/api/ir/send-upload",    HTTP_POST, [this]() { handleApiIrSendUpload();    });
+    _server.on("/api/ir/export",         HTTP_GET,  [this]() { handleApiIrExport();        });
 
     _server.on("/api/wifi/ssids",  HTTP_GET,  [this]() { handleApiWifiSsidsGet(); });
     _server.on("/api/wifi/ssids",  HTTP_POST, [this]() { handleApiWifiSsidsPost(); });
@@ -245,7 +253,10 @@ void PortalManager::handleApiSettingsGet() {
     json += "\"badgeName\":\""    + name    + "\",";
     json += "\"badgeStatus\":\""  + status  + "\",";
     json += "\"badgeTagline\":\"" + tagline + "\",";
-    json += "\"badgeQrData\":\""  + qrData  + "\"";
+    bool autostart = _storageManager->getPortalAutostart();
+    json += "\"badgeQrData\":\""  + qrData  + "\",";
+    json += "\"portalAutostart\":";
+    json += autostart ? "true" : "false";
     json += "}";
 
     _server.send(200, "application/json", json);
@@ -262,6 +273,8 @@ void PortalManager::handleApiSettingsPost() {
     String tagline = _server.arg("badgeTagline");
     String qrData  = _server.arg("badgeQrData");
 
+    if (name.length() > 12) name = name.substring(0, 12);
+
     Serial.printf("[Portal] settings POST: name='%s' status='%s' tagline='%s' qr='%s'\n",
         name.c_str(), status.c_str(), tagline.c_str(), qrData.c_str());
 
@@ -270,6 +283,11 @@ void PortalManager::handleApiSettingsPost() {
 
     _storageManager->setBadgeTagline(tagline);
     _storageManager->setBadgeQrData(qrData);
+
+    if (_server.hasArg("portalAutostart")) {
+        String val = _server.arg("portalAutostart");
+        _storageManager->setPortalAutostart(val == "1" || val == "true");
+    }
 
     _server.send(200, "application/json", ok ? "{\"ok\":true}" : "{\"ok\":false}");
 }
@@ -597,6 +615,84 @@ void PortalManager::handleApiIrImport() {
     json += "\"count\":" + String(count);
     json += "}";
     _server.send(200, "application/json", json);
+}
+
+void PortalManager::handleApiIrUploadSignals() {
+    if (_storageManager == nullptr) {
+        _server.send(500, "application/json", "{\"ok\":false}");
+        return;
+    }
+
+    String filename = _server.arg("filename");
+    if (filename.isEmpty()) {
+        _server.send(400, "application/json", "{\"ok\":false,\"error\":\"missing_filename\"}");
+        return;
+    }
+
+    auto signals = _storageManager->loadIrUploadFile(filename);
+
+    String json = "{\"ok\":true,\"signals\":[";
+    for (size_t i = 0; i < signals.size(); i++) {
+        String name = signals[i].name;
+        name.replace("\\", "\\\\");
+        name.replace("\"", "\\\"");
+        json += "{\"index\":";
+        json += String(i);
+        json += ",\"name\":\"";
+        json += name;
+        json += "\"}";
+        if (i + 1 < signals.size()) json += ',';
+    }
+    json += "]}";
+    _server.send(200, "application/json", json);
+}
+
+void PortalManager::handleApiIrSendUpload() {
+    if (_storageManager == nullptr || _irManager == nullptr) {
+        _server.send(500, "application/json", "{\"ok\":false}");
+        return;
+    }
+
+    String filename = _server.arg("filename");
+    int    index    = _server.arg("index").toInt();
+
+    if (filename.isEmpty()) {
+        _server.send(400, "application/json", "{\"ok\":false,\"error\":\"missing_filename\"}");
+        return;
+    }
+
+    auto signals = _storageManager->loadIrUploadFile(filename);
+    if (index < 0 || index >= (int)signals.size()) {
+        _server.send(404, "application/json", "{\"ok\":false,\"error\":\"bad_index\"}");
+        return;
+    }
+
+    _irManager->setLastCapture(signals[index].capture);
+    bool ok = _irManager->replayLast();
+    _server.send(200, "application/json", ok ? "{\"ok\":true}" : "{\"ok\":false}");
+}
+
+void PortalManager::handleApiIrExport() {
+    if (_storageManager == nullptr) {
+        _server.send(500, "application/json", "{\"ok\":false}");
+        return;
+    }
+
+    int id = 0;
+    if (!tryParsePositiveIntArg(_server, "id", id)) {
+        _server.send(400, "text/plain", "Missing id");
+        return;
+    }
+
+    String content = _storageManager->exportIrCaptureAsFlipperFormat(id);
+    if (content.isEmpty()) {
+        _server.send(404, "text/plain", "Not found or not exportable");
+        return;
+    }
+
+    String disposition = "attachment; filename=\"ir_" + String(id) + ".ir\"";
+    _server.sendHeader("Content-Disposition", disposition);
+    _server.send(200, "text/plain", content);
 }
 
 void PortalManager::handleApiFileDelete() {
