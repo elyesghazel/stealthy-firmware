@@ -8,12 +8,13 @@ class StorageManager;
 class IrManager;
 class PowerManager;
 class WifiKarma;
+class TotpManager;
 
 class PortalManager {
 public:
     PortalManager(StorageManager* storageManager, IrManager* irManager,
                   PowerManager* powerManager, WifiKarma* karmaManager,
-                  DeviceSettings* deviceSettings);
+                  DeviceSettings* deviceSettings, TotpManager* totpManager);
     bool begin();
     void stop();
     void update();
@@ -64,6 +65,11 @@ private:
     void handleApiKarmaStatus();
     void handleApiKarmaClear();
 
+    void handleApiTotpGet();
+    void handleApiTotpAdd();
+    void handleApiTotpDelete();
+    void handleApiTotpSyncTime();
+
     String contentTypeForPath(const String& path) const;
     bool   serveFile(const char* path);
 
@@ -72,6 +78,7 @@ private:
     PowerManager*   _powerManager    = nullptr;
     WifiKarma*      _karmaManager    = nullptr;
     DeviceSettings* _deviceSettings  = nullptr;
+    TotpManager*    _totpManager     = nullptr;
 
     DNSServer  _dnsServer;
     WebServer  _server;

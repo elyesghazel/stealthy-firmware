@@ -31,6 +31,8 @@
 #include "apps/WifiToolsApp.h"
 #include "apps/WifiSpammerApp.h"
 #include "apps/WifiDeauthApp.h"
+#include "apps/TotpApp.h"
+#include "totp/TotpManager.h"
 
 // Pins
 static const int PIN_BTN_UP     = 10;
@@ -60,10 +62,12 @@ WifiSpammer    wifiSpammer;
 WifiDeauth     wifiDeauth;
 WifiKarma      wifiKarma;
 DeviceSettings deviceSettings;
+TotpManager    totpManager;
 
-PortalManager  portalManager(&storageManager, &irManager, &powerManager, &wifiKarma, &deviceSettings);
+PortalManager  portalManager(&storageManager, &irManager, &powerManager, &wifiKarma, &deviceSettings, &totpManager);
 
 // Apps
+TotpApp        totpApp;
 StartScreenApp startScreenApp;
 BadgeApp       badgeApp;
 MainMenuApp    mainMenuApp;
@@ -123,8 +127,10 @@ void setup() {
     appContext.spammer  = &wifiSpammer;
     appContext.deauth   = &wifiDeauth;
     appContext.karma    = &wifiKarma;
+    appContext.totp     = &totpManager;
 
     initFileSystem();
+    totpManager.begin();
 
     // Load persisted settings; apply sleep timeout immediately
     storageManager.loadDeviceSettings(deviceSettings);
@@ -149,11 +155,12 @@ void setup() {
     wifiToolsApp.setup(&appManager, &mainMenuApp, &wifiSpammerApp, &wifiDeauthApp);
     wifiSpammerApp.setup(&appManager, &wifiToolsApp);
     wifiDeauthApp.setup(&appManager, &wifiToolsApp);
+    totpApp.setup(&appManager, &mainMenuApp);
 
     mainMenuApp.setup(
         &appManager,
         &badgeApp, &settingsApp, &aboutApp,
-        &irToolsApp, &portalApp, &wifiToolsApp
+        &irToolsApp, &portalApp, &wifiToolsApp, &totpApp
     );
 
     IApp* firstApp = deviceSettings.showStartScreen ? (IApp*)&startScreenApp : (IApp*)&badgeApp;

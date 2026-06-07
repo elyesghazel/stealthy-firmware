@@ -25,6 +25,7 @@
   <button class="nav-tab"        data-tab="ir-upload" role="tab">IR Upload</button>
   <button class="nav-tab"        data-tab="flood"     role="tab">Flood</button>
   <button class="nav-tab"        data-tab="recon"     role="tab">Recon</button>
+  <button class="nav-tab"        data-tab="totp"      role="tab">TOTP</button>
 </nav>
 
 <main class="main">
@@ -189,6 +190,38 @@
       <button class="btn btn-primary" id="ssid-save-btn">Save SSIDs</button>
       <span class="badge" id="ssid-count-badge">0 SSIDs</span>
     </div>
+  </div>
+
+  <!-- ── TOTP ──────────────────────────────────────────────── -->
+  <div class="pane" id="pane-totp">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title">TOTP Authenticator</h2>
+        <p class="text-muted" style="font-size:.82rem;margin-top:3px">
+          Offline 2FA codes — time synced from your browser
+        </p>
+      </div>
+      <span id="totp-sync-status" class="badge" style="align-self:center">Syncing…</span>
+    </div>
+
+    <div id="totp-accounts-list"></div>
+
+    <div class="section-header" style="margin-top:18px">
+      <h2 class="section-title">Add Account</h2>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="totp-name">Name</label>
+      <input id="totp-name" type="text" class="input" maxlength="40"
+             autocomplete="off" placeholder="GitHub · Google · etc">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="totp-secret">
+        Secret <span class="label-hint">base32 key from the service's 2FA setup</span>
+      </label>
+      <input id="totp-secret" type="text" class="input" maxlength="128"
+             autocomplete="off" placeholder="JBSWY3DPEHPK3PXP">
+    </div>
+    <button id="totp-add-btn" class="btn btn-primary">Add Account</button>
   </div>
 
   <!-- ── Recon ─────────────────────────────────────────────── -->

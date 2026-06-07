@@ -48,6 +48,7 @@ const TAB_LOADERS = {
   'ir-upload': loadIrUpload,
   flood:       loadFlood,
   recon:       loadRecon,
+  totp:        loadTotp,
 };
 
 document.querySelectorAll('.nav-tab').forEach(btn => {
@@ -758,6 +759,200 @@ async function loadKarmaStatus() {
     if (!_sniffInterval) _sniffInterval = setInterval(loadProbes, 2000);
   }
 }
+
+/* ── TOTP ──────────────────────────────────────────────────────── */
+
+// ── Base32 decode (RFC 4648) ──────────────────────────────────────
+function base32Decode(str) {
+  const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  str = str.toUpperCase().replace(/[\s=]/g, '');
+  let bits = 0, nbits = 0;
+  const out = [];
+  for (const c of str) {
+    const v = alpha.indexOf(c);
+    if (v < 0) continue;
+    bits = (bits << 5) | v;
+    nbits += 5;
+    if (nbits >= 8) { out.push((bits >> (nbits - 8)) & 0xFF); nbits -= 8; }
+  }
+  return new Uint8Array(out);
+}
+
+// ── Compute TOTP code (RFC 6238, HMAC-SHA-1) ─────────────────────
+async function computeTotp(secret, unixTime) {
+  const key = base32Decode(secret);
+  if (!key.length) return null;
+
+  const counter = Math.floor(unixTime / 30);
+  const buf = new ArrayBuffer(8);
+  const view = new DataView(buf);
+  // Big-endian 64-bit counter
+  view.setUint32(0, Math.floor(counter / 0x100000000) >>> 0, false);
+  view.setUint32(4, counter >>> 0, false);
+
+  try {
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw', key.buffer, { name: 'HMAC', hash: 'SHA-1' }, false, ['sign']
+    );
+    const sig    = await crypto.subtle.sign('HMAC', cryptoKey, buf);
+    const hash   = new Uint8Array(sig);
+    const offset = hash[19] & 0xF;
+    const code   = ((hash[offset] & 0x7F) << 24 | hash[offset+1] << 16 |
+                     hash[offset+2] << 8  | hash[offset+3]) % 1000000;
+    return String(code).padStart(6, '0');
+  } catch { return null; }
+}
+
+let _totpData      = null;
+let _totpInterval  = null;
+let _totpSecretMap = {}; // name → secret (only held in browser memory)
+
+async function loadTotp() {
+  // Sync device clock
+  const ts = Math.floor(Date.now() / 1000);
+  const syncEl = document.getElementById('totp-sync-status');
+  const r = await apiPost('/api/totp/sync-time', { timestamp: String(ts) });
+  if (syncEl) syncEl.textContent = r.ok ? 'Time synced ✓' : 'Sync failed';
+
+  // Fetch account list
+  const data = await api('/api/totp');
+  if (!data.ok) return;
+  _totpData = data;
+
+  renderTotpList();
+
+  // Live update every second
+  if (_totpInterval) clearInterval(_totpInterval);
+  _totpInterval = setInterval(updateTotpCodes, 1000);
+  updateTotpCodes();
+}
+
+function renderTotpList() {
+  const el = document.getElementById('totp-accounts-list');
+  if (!_totpData || !_totpData.accounts.length) {
+    el.innerHTML = '<p class="text-muted" style="margin-bottom:12px">No accounts yet. Add one below.</p>';
+    return;
+  }
+
+  el.innerHTML = '';
+  _totpData.accounts.forEach((acct, i) => {
+    const card = document.createElement('div');
+    card.className = 'totp-card';
+    card.dataset.index = i;
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'totp-name';
+    nameEl.textContent = acct.name;
+
+    // Secret input (inline, only needed for live preview in browser)
+    const secWrap = document.createElement('div');
+    secWrap.className = 'totp-secret-row';
+    const secInput = document.createElement('input');
+    secInput.type = 'text';
+    secInput.className = 'input totp-secret-input';
+    secInput.placeholder = 'Paste secret for live preview';
+    secInput.autocomplete = 'off';
+    secInput.value = _totpSecretMap[acct.name] || '';
+    secInput.addEventListener('input', () => {
+      _totpSecretMap[acct.name] = secInput.value.trim();
+      updateTotpCodes();
+    });
+    const secLabel = document.createElement('span');
+    secLabel.className = 'label-hint';
+    secLabel.textContent = 'Secret (browser only — not sent to device)';
+    secWrap.append(secLabel, secInput);
+
+    // Code display
+    const codeEl = document.createElement('div');
+    codeEl.className = 'totp-code';
+    codeEl.dataset.name = acct.name;
+    codeEl.textContent = '--- ---';
+
+    // Progress bar
+    const barWrap = document.createElement('div');
+    barWrap.className = 'totp-bar-wrap';
+    const bar = document.createElement('div');
+    bar.className = 'totp-bar';
+    bar.dataset.name = acct.name;
+    barWrap.appendChild(bar);
+
+    const timerEl = document.createElement('span');
+    timerEl.className = 'totp-timer';
+    timerEl.dataset.name = acct.name;
+    timerEl.textContent = '30s';
+
+    const barRow = document.createElement('div');
+    barRow.className = 'totp-bar-row';
+    barRow.append(barWrap, timerEl);
+
+    // Delete button
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn';
+    delBtn.textContent = 'Remove';
+    delBtn.addEventListener('click', async () => {
+      setBtn(delBtn, '…', true);
+      const res = await apiPost('/api/totp/delete', { index: String(i) });
+      if (res.ok) {
+        delete _totpSecretMap[acct.name];
+        await loadTotp();
+      } else {
+        setBtn(delBtn, 'Remove', false);
+        toast('Delete failed.', 'err');
+      }
+    });
+
+    card.append(nameEl, secWrap, codeEl, barRow, delBtn);
+    el.appendChild(card);
+  });
+}
+
+async function updateTotpCodes() {
+  if (!_totpData) return;
+  const now = Math.floor(Date.now() / 1000);
+  const secsLeft = 29 - (now % 30);
+  const pct = ((secsLeft + 1) / 30) * 100;
+
+  for (const acct of _totpData.accounts) {
+    const secret = _totpSecretMap[acct.name] || '';
+    const codeEl  = document.querySelector(`.totp-code[data-name="${CSS.escape(acct.name)}"]`);
+    const barEl   = document.querySelector(`.totp-bar[data-name="${CSS.escape(acct.name)}"]`);
+    const timerEl = document.querySelector(`.totp-timer[data-name="${CSS.escape(acct.name)}"]`);
+
+    if (timerEl) timerEl.textContent = (secsLeft + 1) + 's';
+    if (barEl)   barEl.style.width = pct + '%';
+
+    if (codeEl) {
+      if (secret) {
+        const code = await computeTotp(secret, now);
+        codeEl.textContent = code ? (code.slice(0,3) + ' ' + code.slice(3)) : '--- ---';
+      } else {
+        codeEl.textContent = '--- ---';
+      }
+    }
+  }
+}
+
+document.getElementById('totp-add-btn').addEventListener('click', async () => {
+  const btn    = document.getElementById('totp-add-btn');
+  const name   = document.getElementById('totp-name').value.trim();
+  const secret = document.getElementById('totp-secret').value.trim().replace(/\s/g, '');
+
+  if (!name || !secret) { toast('Fill in name and secret.', 'err'); return; }
+
+  setBtn(btn, 'Adding…', true);
+  const res = await apiPost('/api/totp/add', { name, secret });
+  setBtn(btn, 'Add Account', false);
+
+  if (res.ok) {
+    _totpSecretMap[name] = secret;
+    document.getElementById('totp-name').value   = '';
+    document.getElementById('totp-secret').value = '';
+    toast('Account added.', 'ok');
+    await loadTotp();
+  } else {
+    toast(res.error || 'Failed — check secret format.', 'err');
+  }
+});
 
 /* ── Init ──────────────────────────────────────────────────────── */
 loadSystem();

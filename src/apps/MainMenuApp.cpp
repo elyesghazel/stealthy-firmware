@@ -27,7 +27,8 @@ void MainMenuApp::setup(
     IApp* aboutApp,
     IApp* irToolsApp,
     IApp* portalApp,
-    IApp* wifiToolsApp
+    IApp* wifiToolsApp,
+    IApp* totpApp
 ) {
     _appManager   = appManager;
     _badgeApp     = badgeApp;
@@ -36,6 +37,7 @@ void MainMenuApp::setup(
     _irToolsApp   = irToolsApp;
     _portalApp    = portalApp;
     _wifiToolsApp = wifiToolsApp;
+    _totpApp      = totpApp;
 }
 
 void MainMenuApp::onEnter() {
@@ -77,6 +79,7 @@ void MainMenuApp::handleButton(const ButtonEvent& event) {
                 case 3: if (_portalApp)    _appManager->switchTo(_portalApp);    break;
                 case 4: if (_irToolsApp)   _appManager->switchTo(_irToolsApp);   break;
                 case 5: if (_wifiToolsApp) _appManager->switchTo(_wifiToolsApp); break;
+                case 6: if (_totpApp)      _appManager->switchTo(_totpApp);      break;
             }
             break;
     }

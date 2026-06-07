@@ -17,6 +17,7 @@ public:
 
     void setDefaultFont();
     void setTitleFont();
+    void setCodeFont();    // FreeMonoBold18pt7b — for TOTP digit boxes
 
     void setTextBlack();
     void setTextWhite();

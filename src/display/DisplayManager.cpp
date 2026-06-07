@@ -4,6 +4,7 @@
 #include <SPI.h>
 #include <GxEPD2_BW.h>
 #include <Fonts/FreeMonoBold9pt7b.h>
+#include <Fonts/FreeMonoBold18pt7b.h>
 
 #define EPD_MOSI 4
 #define EPD_SCK  5
@@ -72,6 +73,10 @@ void DisplayManager::setDefaultFont() {
 
 void DisplayManager::setTitleFont() {
     display.setFont(&FreeMonoBold9pt7b);
+}
+
+void DisplayManager::setCodeFont() {
+    display.setFont(&FreeMonoBold18pt7b);
 }
 
 void DisplayManager::setTextBlack() {

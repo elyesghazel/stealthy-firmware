@@ -591,3 +591,65 @@ code {
   transition: transform .2s;
 }
 .toggle-switch input:checked + .toggle-track::after { transform: translateX(18px); }
+
+/* ── TOTP ────────────────────────────────────────────────────── */
+.totp-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.totp-name {
+  font-size: .94rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+.totp-code {
+  font-size: 2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .18em;
+  color: var(--accent);
+  margin: 10px 0 8px;
+  font-family: 'Courier New', monospace;
+}
+.totp-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.totp-bar-wrap {
+  flex: 1;
+  height: 5px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.totp-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width .9s linear;
+  width: 100%;
+}
+.totp-timer {
+  font-size: .76rem;
+  color: var(--text-muted);
+  min-width: 26px;
+  text-align: right;
+}
+.totp-secret-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.totp-secret-input {
+  font-size: .78rem;
+  padding: 5px 8px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+}

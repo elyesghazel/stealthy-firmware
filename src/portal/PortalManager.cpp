@@ -10,15 +10,17 @@
 #include "ir/IrDriver.h"
 #include "ir/FlipperIrSerializer.h"
 #include "wifi/WifiKarma.h"
+#include "totp/TotpManager.h"
 
 PortalManager::PortalManager(StorageManager* storageManager, IrManager* irManager,
                              PowerManager* powerManager, WifiKarma* karmaManager,
-                             DeviceSettings* deviceSettings)
+                             DeviceSettings* deviceSettings, TotpManager* totpManager)
     : _storageManager(storageManager),
       _irManager(irManager),
       _powerManager(powerManager),
       _karmaManager(karmaManager),
       _deviceSettings(deviceSettings),
+      _totpManager(totpManager),
       _server(80) {
 }
 
@@ -191,6 +193,11 @@ void PortalManager::setupRoutes() {
     _server.on("/api/karma/stop",        HTTP_POST, [this]() { handleApiKarmaStop();        });
     _server.on("/api/karma/status",      HTTP_GET,  [this]() { handleApiKarmaStatus();      });
     _server.on("/api/karma/clear",       HTTP_POST, [this]() { handleApiKarmaClear();       });
+
+    _server.on("/api/totp",            HTTP_GET,  [this]() { handleApiTotpGet();      });
+    _server.on("/api/totp/add",        HTTP_POST, [this]() { handleApiTotpAdd();      });
+    _server.on("/api/totp/delete",     HTTP_POST, [this]() { handleApiTotpDelete();   });
+    _server.on("/api/totp/sync-time",  HTTP_POST, [this]() { handleApiTotpSyncTime(); });
 
     _server.onNotFound([this]() {
         if (!serveFile("/web/index.html")) {
@@ -882,6 +889,82 @@ void PortalManager::handleApiKarmaClear() {
         return;
     }
     _karmaManager->clearProbes();
+    _server.send(200, "application/json", "{\"ok\":true}");
+}
+
+// ─── TOTP ────────────────────────────────────────────────────────────────────
+
+void PortalManager::handleApiTotpGet() {
+    if (!_totpManager) {
+        _server.send(500, "application/json", "{\"ok\":false}");
+        return;
+    }
+    const auto& accts = _totpManager->accounts();
+    String json = "{\"ok\":true,\"timeSynced\":";
+    json += _totpManager->isTimeSynced() ? "true" : "false";
+    json += ",\"accounts\":[";
+    for (size_t i = 0; i < accts.size(); i++) {
+        if (i > 0) json += ",";
+        json += "{\"name\":\"";
+        String n = accts[i].name;
+        n.replace("\\", "\\\\");
+        n.replace("\"", "\\\"");
+        json += n;
+        json += "\"}";
+    }
+    json += "]}";
+    _server.send(200, "application/json", json);
+}
+
+void PortalManager::handleApiTotpAdd() {
+    if (!_totpManager) {
+        _server.send(500, "application/json", "{\"ok\":false}");
+        return;
+    }
+    String name   = _server.arg("name");
+    String secret = _server.arg("secret");
+    name.trim();
+    secret.trim();
+    // Strip spaces from secret (common when copy-pasting)
+    secret.replace(" ", "");
+
+    if (name.isEmpty() || secret.isEmpty()) {
+        _server.send(400, "application/json", "{\"ok\":false,\"error\":\"missing fields\"}");
+        return;
+    }
+    if (!_totpManager->addAccount(name, secret)) {
+        _server.send(400, "application/json", "{\"ok\":false,\"error\":\"invalid secret or limit reached\"}");
+        return;
+    }
+    _server.send(200, "application/json", "{\"ok\":true}");
+}
+
+void PortalManager::handleApiTotpDelete() {
+    if (!_totpManager) {
+        _server.send(500, "application/json", "{\"ok\":false}");
+        return;
+    }
+    int index = _server.arg("index").toInt();
+    if (!_totpManager->deleteAccount(index)) {
+        _server.send(400, "application/json", "{\"ok\":false,\"error\":\"invalid index\"}");
+        return;
+    }
+    _server.send(200, "application/json", "{\"ok\":true}");
+}
+
+void PortalManager::handleApiTotpSyncTime() {
+    if (!_totpManager) {
+        _server.send(500, "application/json", "{\"ok\":false}");
+        return;
+    }
+    String tsStr = _server.arg("timestamp");
+    tsStr.trim();
+    unsigned long ts = (unsigned long)tsStr.toInt();
+    if (ts < 1000000000UL) {
+        _server.send(400, "application/json", "{\"ok\":false,\"error\":\"invalid timestamp\"}");
+        return;
+    }
+    _totpManager->syncTime(ts);
     _server.send(200, "application/json", "{\"ok\":true}");
 }
 

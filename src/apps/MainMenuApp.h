@@ -17,7 +17,8 @@ public:
         IApp* aboutApp,
         IApp* irToolsApp,
         IApp* portalApp,
-        IApp* wifiToolsApp
+        IApp* wifiToolsApp,
+        IApp* totpApp
     );
 
     void onEnter() override;
@@ -27,7 +28,7 @@ public:
     void render(DisplayManager& display) override;
 
 private:
-    static const int ITEM_COUNT    = 6;
+    static const int ITEM_COUNT    = 7;
     static const int VISIBLE_ITEMS = 4;
 
     AppManager* _appManager    = nullptr;
@@ -37,6 +38,7 @@ private:
     IApp*       _irToolsApp    = nullptr;
     IApp*       _portalApp     = nullptr;
     IApp*       _wifiToolsApp  = nullptr;
+    IApp*       _totpApp       = nullptr;
 
     const char* _items[ITEM_COUNT] = {
         "Badge",
@@ -44,7 +46,8 @@ private:
         "About",
         "Captive Portal",
         "IR Tools",
-        "WiFi Tools"
+        "WiFi Tools",
+        "TOTP"
     };
 
     int _selectedIndex    = 0;
