@@ -1,8 +1,6 @@
 #include "MainMenuApp.h"
 #include "framework/AppManager.h"
 #include "display/DisplayManager.h"
-#include "portal/PortalManager.h"
-#include "led/LedManager.h"
 
 namespace {
     constexpr int TITLE_X  = 5;
@@ -68,23 +66,9 @@ void MainMenuApp::handleButton(const ButtonEvent& event) {
         case ButtonId::Back:
             if (event.action == ButtonAction::Press && _appManager && _badgeApp)
                 _appManager->switchTo(_badgeApp);
-            else if (event.action == ButtonAction::LongPress && _appManager && _badgeApp)
-                _appManager->switchTo(_badgeApp);
             break;
 
         case ButtonId::Select:
-            if (event.action == ButtonAction::LongPress && _appManager) {
-                // Long-press Select: toggle portal on/off
-                auto* portal = _appManager->context()->portal;
-                auto* leds   = _appManager->context()->leds;
-                if (portal) {
-                    if (portal->isRunning()) portal->stop();
-                    else                     portal->begin();
-                    if (leds) leds->showSuccess();
-                    requestFullRender();
-                }
-                break;
-            }
             if (event.action != ButtonAction::Press || !_appManager) break;
             switch (_selectedIndex) {
                 case 0: if (_badgeApp)     _appManager->switchTo(_badgeApp);     break;
