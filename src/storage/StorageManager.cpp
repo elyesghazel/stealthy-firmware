@@ -613,6 +613,18 @@ bool StorageManager::setPortalAutostart(bool enabled) {
     return _fileSystemDriver->writeTextFile(PORTAL_AUTOSTART_PATH, enabled ? "1" : "0");
 }
 
+String StorageManager::getPortalPasswordHash() const {
+    if (!_available) return "";
+    String v = _fileSystemDriver->readTextFile(PORTAL_PASSWORD_PATH);
+    v.trim();
+    return v;
+}
+
+bool StorageManager::setPortalPasswordHash(const String& sha256Hex) {
+    if (!_available) return false;
+    return _fileSystemDriver->writeTextFile(PORTAL_PASSWORD_PATH, sha256Hex);
+}
+
 String StorageManager::exportIrCaptureAsFlipperFormat(int id) const {
     if (!_available) return "";
     String fileId = makeFileId(id);

@@ -71,6 +71,10 @@ public:
     bool getPortalAutostart() const;
     bool setPortalAutostart(bool enabled);
 
+    // Portal password (stored as SHA-256 hex; empty = no password)
+    String getPortalPasswordHash() const;
+    bool   setPortalPasswordHash(const String& sha256Hex);
+
     // Badge profiles (0–2)
     static constexpr int PROFILE_COUNT = 3;
     int  getActiveProfile() const;
@@ -96,6 +100,7 @@ private:
     static constexpr const char* BADGE_MODE_PATH = "/config/badge_mode.txt";
     static constexpr const char* SPAM_SSIDS_PATH = "/config/spam_ssids.txt";
     static constexpr const char* PORTAL_AUTOSTART_PATH   = "/config/portal_autostart.txt";
+    static constexpr const char* PORTAL_PASSWORD_PATH    = "/config/portal_password.txt";
     static constexpr const char* DEVICE_SETTINGS_PATH    = "/config/device_settings.txt";
     static constexpr const char* ACTIVE_PROFILE_PATH     = "/config/active_profile.txt";
     static constexpr const char* PAYLOADS_DIR = "/payloads";

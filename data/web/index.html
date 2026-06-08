@@ -9,6 +9,19 @@
 <body>
 <div id="toast-container"></div>
 
+<div id="login-overlay" class="login-overlay hidden">
+  <div class="login-card">
+    <div class="login-brand">STEALTHY</div>
+    <p class="login-hint">Portal password required</p>
+    <form id="login-form" novalidate>
+      <input id="login-password" type="password" class="input" placeholder="Password"
+             autocomplete="current-password" style="width:100%;margin-bottom:6px">
+      <div id="login-error" class="login-error"></div>
+      <button id="login-btn" type="submit" class="btn btn-primary" style="width:100%;margin-top:8px">Unlock</button>
+    </form>
+  </div>
+</div>
+
 <header class="header">
   <span class="brand">STEALTHY</span>
   <div class="header-right">
@@ -83,6 +96,17 @@
         <input type="checkbox" id="start-screen-toggle">
         <span class="toggle-track"></span>
       </label>
+    </div>
+    <div class="setting-row" style="align-items:flex-start;flex-direction:column;gap:10px">
+      <div class="setting-info">
+        <div class="setting-label">Portal Password</div>
+        <div class="setting-hint" id="password-hint">Loading…</div>
+      </div>
+      <div style="display:flex;gap:8px;width:100%">
+        <input id="new-password" type="password" class="input" placeholder="New password (blank to remove)"
+               autocomplete="new-password" style="flex:1;min-width:0">
+        <button id="set-password-btn" class="btn">Set</button>
+      </div>
     </div>
     <p class="note">Portal runs in AP+STA mode — WiFi tools stay active without disconnecting you.</p>
   </div>

@@ -70,6 +70,16 @@ private:
     void handleApiTotpDelete();
     void handleApiTotpSyncTime();
 
+    void handleApiAuthStatus();
+    void handleApiAuthLogin();
+    void handleApiAuthLogout();
+    void handleApiAuthSetPassword();
+
+    bool   isAuthenticated();
+    bool   requireAuth();
+    static String sha256Hex(const String& input);
+    static String generateToken();
+
     String contentTypeForPath(const String& path) const;
     bool   serveFile(const char* path);
 
@@ -83,8 +93,9 @@ private:
     DNSServer  _dnsServer;
     WebServer  _server;
 
-    bool _running        = false;
-    bool _uploadHadError = false;
+    bool   _running        = false;
+    bool   _uploadHadError = false;
+    String _sessionToken;   // empty = no active session
 
     static constexpr const char* AP_SSID = "STEALTHY-SETUP";
     static constexpr const char* AP_IP   = "192.168.4.1";

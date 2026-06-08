@@ -3,6 +3,8 @@
 #include <WiFi.h>
 #include <LittleFS.h>
 #include <esp_wifi.h>
+#include <esp_random.h>
+#include <mbedtls/sha256.h>
 
 #include "storage/StorageManager.h"
 #include "ir/IrManager.h"
@@ -89,6 +91,8 @@ bool PortalManager::begin() {
     setupRoutes();
 
     Serial.flush();
+    const char* collectHeaders[] = { "Cookie" };
+    _server.collectHeaders(collectHeaders, 1);
     _server.begin();
 
     _running = true;
@@ -115,6 +119,7 @@ void PortalManager::stop() {
     WiFi.mode(WIFI_OFF);
 
     _running = false;
+    _sessionToken = "";
 
     Serial.println("[Portal] stopped");
 }
@@ -177,6 +182,7 @@ void PortalManager::setupRoutes() {
     _server.on("/api/file/delete",  HTTP_POST, [this]() { handleApiFileDelete(); });
     _server.on("/api/file/upload", HTTP_POST,
         [this]() {
+            if (!requireAuth()) return;
             if (_uploadHadError) {
                 _server.send(400, "application/json", "{\"ok\":false}");
             } else {
@@ -199,6 +205,12 @@ void PortalManager::setupRoutes() {
     _server.on("/api/totp/delete",     HTTP_POST, [this]() { handleApiTotpDelete();   });
     _server.on("/api/totp/sync-time",  HTTP_POST, [this]() { handleApiTotpSyncTime(); });
 
+    // Auth — unprotected
+    _server.on("/api/auth/status",       HTTP_GET,  [this]() { handleApiAuthStatus();      });
+    _server.on("/api/auth/login",        HTTP_POST, [this]() { handleApiAuthLogin();       });
+    _server.on("/api/auth/logout",       HTTP_POST, [this]() { handleApiAuthLogout();      });
+    _server.on("/api/auth/set-password", HTTP_POST, [this]() { handleApiAuthSetPassword(); });
+
     _server.onNotFound([this]() {
         if (!serveFile("/web/index.html")) {
             _server.send(404, "text/plain", "Not found");
@@ -218,6 +230,7 @@ void PortalManager::handleJs() {
 }
 
 void PortalManager::handleApiBattery() {
+    if (!requireAuth()) return;
     if (_powerManager == nullptr) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -236,6 +249,7 @@ void PortalManager::handleApiBattery() {
 
 
 void PortalManager::handleApiStatus() {
+    if (!requireAuth()) return;
     String json = "{";
     json += "\"ok\":true,";
     json += "\"portal\":\"running\",";
@@ -247,6 +261,7 @@ void PortalManager::handleApiStatus() {
 }
 
 void PortalManager::handleApiSettingsGet() {
+    if (!requireAuth()) return;
     if (_storageManager == nullptr) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -280,6 +295,7 @@ void PortalManager::handleApiSettingsGet() {
 }
 
 void PortalManager::handleApiSettingsPost() {
+    if (!requireAuth()) return;
     if (_storageManager == nullptr) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -326,6 +342,7 @@ void PortalManager::handleApiSettingsPost() {
 }
 
 void PortalManager::handleApiIrList() {
+    if (!requireAuth()) return;
     if (_storageManager == nullptr) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -359,6 +376,7 @@ void PortalManager::handleApiIrList() {
 }
 
 void PortalManager::handleApiIrSend() {
+    if (!requireAuth()) return;
     if (_storageManager == nullptr || _irManager == nullptr) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -389,6 +407,7 @@ void PortalManager::handleApiIrSend() {
 }
 
 void PortalManager::handleApiIrRename() {
+    if (!requireAuth()) return;
     if (_storageManager == nullptr) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -413,6 +432,7 @@ void PortalManager::handleApiIrRename() {
 }
 
 void PortalManager::handleApiIrDelete() {
+    if (!requireAuth()) return;
     if (_storageManager == nullptr) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -438,6 +458,7 @@ void PortalManager::handleApiIrDelete() {
 
 
 void PortalManager::handleApiFsList() {
+    if (!requireAuth()) return;
     if (_storageManager == nullptr) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -506,6 +527,7 @@ void PortalManager::handleApiFsList() {
 }
 
 void PortalManager::handleApiFileDownload() {
+    if (!requireAuth()) return;
     String path = _server.arg("path");
 
     if (!isSafeFsPath(path)) {
@@ -532,7 +554,7 @@ void PortalManager::handleApiFileUpload() {
     static String uploadPath;
 
     if (upload.status == UPLOAD_FILE_START) {
-        _uploadHadError = false;
+        _uploadHadError = !isAuthenticated();
 
         String dir = _server.arg("path");
         if (dir.isEmpty()) {
@@ -583,6 +605,7 @@ void PortalManager::handleApiFileUpload() {
 
 
 void PortalManager::handleApiWifiSsidsGet() {
+    if (!requireAuth()) return;
     if (!_storageManager) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -601,6 +624,7 @@ void PortalManager::handleApiWifiSsidsGet() {
 }
 
 void PortalManager::handleApiWifiSsidsPost() {
+    if (!requireAuth()) return;
     if (!_storageManager) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -621,6 +645,7 @@ void PortalManager::handleApiWifiSsidsPost() {
 }
 
 void PortalManager::handleApiWifiStatus() {
+    if (!requireAuth()) return;
     int count = 0;
     if (_storageManager) {
         count = (int)_storageManager->loadSpamSSIDs().size();
@@ -630,6 +655,7 @@ void PortalManager::handleApiWifiStatus() {
 }
 
 void PortalManager::handleApiProfilesGet() {
+    if (!requireAuth()) return;
     if (!_storageManager) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -652,6 +678,7 @@ void PortalManager::handleApiProfilesGet() {
 }
 
 void PortalManager::handleApiProfilesPost() {
+    if (!requireAuth()) return;
     if (!_storageManager) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -668,6 +695,7 @@ void PortalManager::handleApiProfilesPost() {
 }
 
 void PortalManager::handleApiProfilesSetActive() {
+    if (!requireAuth()) return;
     if (!_storageManager) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -678,6 +706,7 @@ void PortalManager::handleApiProfilesSetActive() {
 }
 
 void PortalManager::handleApiIrImport() {
+    if (!requireAuth()) return;
     if (_storageManager == nullptr) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -699,6 +728,7 @@ void PortalManager::handleApiIrImport() {
 }
 
 void PortalManager::handleApiIrUploadSignals() {
+    if (!requireAuth()) return;
     if (_storageManager == nullptr) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -729,6 +759,7 @@ void PortalManager::handleApiIrUploadSignals() {
 }
 
 void PortalManager::handleApiIrSendUpload() {
+    if (!requireAuth()) return;
     if (_storageManager == nullptr || _irManager == nullptr) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -754,6 +785,7 @@ void PortalManager::handleApiIrSendUpload() {
 }
 
 void PortalManager::handleApiIrExport() {
+    if (!requireAuth()) return;
     if (_storageManager == nullptr) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -777,6 +809,7 @@ void PortalManager::handleApiIrExport() {
 }
 
 void PortalManager::handleApiFileDelete() {
+    if (!requireAuth()) return;
     String path = _server.arg("path");
     if (!isSafeFsPath(path)) {
         _server.send(400, "application/json", "{\"ok\":false,\"error\":\"bad_path\"}");
@@ -789,6 +822,7 @@ void PortalManager::handleApiFileDelete() {
 // ─── Karma / Probe handlers ───────────────────────────────────────────────────
 
 void PortalManager::handleApiKarmaProbes() {
+    if (!requireAuth()) return;
     if (!_karmaManager) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -820,6 +854,7 @@ void PortalManager::handleApiKarmaProbes() {
 }
 
 void PortalManager::handleApiKarmaStartSniff() {
+    if (!requireAuth()) return;
     if (!_karmaManager) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -829,6 +864,7 @@ void PortalManager::handleApiKarmaStartSniff() {
 }
 
 void PortalManager::handleApiKarmaStopSniff() {
+    if (!requireAuth()) return;
     if (!_karmaManager) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -838,6 +874,7 @@ void PortalManager::handleApiKarmaStopSniff() {
 }
 
 void PortalManager::handleApiKarmaStart() {
+    if (!requireAuth()) return;
     if (!_karmaManager) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -853,6 +890,7 @@ void PortalManager::handleApiKarmaStart() {
 }
 
 void PortalManager::handleApiKarmaStop() {
+    if (!requireAuth()) return;
     if (!_karmaManager) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -862,6 +900,7 @@ void PortalManager::handleApiKarmaStop() {
 }
 
 void PortalManager::handleApiKarmaStatus() {
+    if (!requireAuth()) return;
     if (!_karmaManager) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -884,6 +923,7 @@ void PortalManager::handleApiKarmaStatus() {
 }
 
 void PortalManager::handleApiKarmaClear() {
+    if (!requireAuth()) return;
     if (!_karmaManager) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -895,6 +935,7 @@ void PortalManager::handleApiKarmaClear() {
 // ─── TOTP ────────────────────────────────────────────────────────────────────
 
 void PortalManager::handleApiTotpGet() {
+    if (!requireAuth()) return;
     if (!_totpManager) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -917,6 +958,7 @@ void PortalManager::handleApiTotpGet() {
 }
 
 void PortalManager::handleApiTotpAdd() {
+    if (!requireAuth()) return;
     if (!_totpManager) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -940,6 +982,7 @@ void PortalManager::handleApiTotpAdd() {
 }
 
 void PortalManager::handleApiTotpDelete() {
+    if (!requireAuth()) return;
     if (!_totpManager) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -953,6 +996,7 @@ void PortalManager::handleApiTotpDelete() {
 }
 
 void PortalManager::handleApiTotpSyncTime() {
+    if (!requireAuth()) return;
     if (!_totpManager) {
         _server.send(500, "application/json", "{\"ok\":false}");
         return;
@@ -965,6 +1009,117 @@ void PortalManager::handleApiTotpSyncTime() {
         return;
     }
     _totpManager->syncTime(ts);
+    _server.send(200, "application/json", "{\"ok\":true}");
+}
+
+// ─── Auth helpers ─────────────────────────────────────────────────────────────
+
+String PortalManager::sha256Hex(const String& input) {
+    uint8_t hash[32];
+    mbedtls_sha256((const uint8_t*)input.c_str(), input.length(), hash, 0);
+    String result;
+    result.reserve(64);
+    char buf[3];
+    for (int i = 0; i < 32; i++) {
+        snprintf(buf, sizeof(buf), "%02x", hash[i]);
+        result += buf;
+    }
+    return result;
+}
+
+String PortalManager::generateToken() {
+    String token;
+    token.reserve(32);
+    char buf[3];
+    for (int i = 0; i < 4; i++) {
+        uint32_t r = esp_random();
+        for (int b = 0; b < 4; b++) {
+            snprintf(buf, sizeof(buf), "%02x", (uint8_t)(r >> (b * 8)));
+            token += buf;
+        }
+    }
+    return token;
+}
+
+bool PortalManager::isAuthenticated() {
+    if (!_storageManager) return true;
+    String storedHash = _storageManager->getPortalPasswordHash();
+    if (storedHash.isEmpty()) return true;   // no password configured
+    if (_sessionToken.isEmpty()) return false;
+
+    String cookieHeader = _server.header("Cookie");
+    int idx = cookieHeader.indexOf("session=");
+    if (idx < 0) return false;
+    String token = cookieHeader.substring(idx + 8);
+    int end = token.indexOf(';');
+    if (end >= 0) token = token.substring(0, end);
+    token.trim();
+    return token == _sessionToken;
+}
+
+bool PortalManager::requireAuth() {
+    if (isAuthenticated()) return true;
+    _server.send(401, "application/json", "{\"ok\":false,\"error\":\"unauthorized\"}");
+    return false;
+}
+
+// ─── Auth route handlers ──────────────────────────────────────────────────────
+
+void PortalManager::handleApiAuthStatus() {
+    bool passwordSet    = _storageManager && !_storageManager->getPortalPasswordHash().isEmpty();
+    bool authenticated  = isAuthenticated();
+    String json = "{\"ok\":true,";
+    json += "\"passwordSet\":"   + String(passwordSet   ? "true" : "false") + ",";
+    json += "\"authenticated\":" + String(authenticated ? "true" : "false");
+    json += "}";
+    _server.send(200, "application/json", json);
+}
+
+void PortalManager::handleApiAuthLogin() {
+    String storedHash = _storageManager ? _storageManager->getPortalPasswordHash() : "";
+    if (storedHash.isEmpty()) {
+        _server.send(200, "application/json", "{\"ok\":true}");
+        return;
+    }
+    String password  = _server.arg("password");
+    String inputHash = sha256Hex(password);
+    if (inputHash != storedHash) {
+        _server.send(401, "application/json", "{\"ok\":false,\"error\":\"wrong_password\"}");
+        return;
+    }
+    _sessionToken = generateToken();
+    _server.sendHeader("Set-Cookie",
+        "session=" + _sessionToken + "; HttpOnly; SameSite=Strict; Path=/");
+    _server.send(200, "application/json", "{\"ok\":true}");
+}
+
+void PortalManager::handleApiAuthLogout() {
+    _sessionToken = "";
+    _server.sendHeader("Set-Cookie",
+        "session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0");
+    _server.send(200, "application/json", "{\"ok\":true}");
+}
+
+void PortalManager::handleApiAuthSetPassword() {
+    if (!requireAuth()) return;
+    if (!_storageManager) {
+        _server.send(500, "application/json", "{\"ok\":false}");
+        return;
+    }
+    String newPassword = _server.arg("password");
+    String newHash     = newPassword.isEmpty() ? "" : sha256Hex(newPassword);
+    if (!_storageManager->setPortalPasswordHash(newHash)) {
+        _server.send(500, "application/json", "{\"ok\":false}");
+        return;
+    }
+    // Refresh session token so current client stays logged in after password change
+    if (!newHash.isEmpty()) {
+        _sessionToken = generateToken();
+        _server.sendHeader("Set-Cookie",
+            "session=" + _sessionToken + "; HttpOnly; SameSite=Strict; Path=/");
+    } else {
+        _sessionToken = "";
+    }
     _server.send(200, "application/json", "{\"ok\":true}");
 }
 

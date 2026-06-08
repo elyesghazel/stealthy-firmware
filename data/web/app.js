@@ -1,3 +1,57 @@
+/* ── Auth ──────────────────────────────────────────────────────── */
+
+function showLoginOverlay() {
+  document.getElementById('login-overlay').classList.remove('hidden');
+  document.getElementById('login-password').focus();
+}
+
+function hideLoginOverlay() {
+  document.getElementById('login-overlay').classList.add('hidden');
+}
+
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn      = document.getElementById('login-btn');
+  const errEl    = document.getElementById('login-error');
+  const password = document.getElementById('login-password').value;
+  errEl.textContent = '';
+  setBtn(btn, '…', true);
+  const data = await apiPost('/api/auth/login', { password });
+  setBtn(btn, 'Unlock', false);
+  if (data.ok) {
+    hideLoginOverlay();
+    initApp();
+  } else {
+    errEl.textContent = 'Wrong password.';
+    document.getElementById('login-password').select();
+  }
+});
+
+async function loadPasswordStatus() {
+  const data = await api('/api/auth/status');
+  const hint = document.getElementById('password-hint');
+  if (!hint) return;
+  hint.textContent = (data.passwordSet)
+    ? 'Password is set. Enter a new password to change it, or leave blank to remove it.'
+    : 'No password — portal is open to anyone on the AP.';
+}
+
+document.getElementById('set-password-btn').addEventListener('click', async () => {
+  const btn      = document.getElementById('set-password-btn');
+  const input    = document.getElementById('new-password');
+  const removing = input.value === '';
+  setBtn(btn, '…', true);
+  const data = await apiPost('/api/auth/set-password', { password: input.value });
+  setBtn(btn, 'Set', false);
+  if (data.ok) {
+    input.value = '';
+    toast(removing ? 'Password removed.' : 'Password updated.', 'ok');
+    loadPasswordStatus();
+  } else {
+    toast('Failed to update password.', 'err');
+  }
+});
+
 /* ── Toast ─────────────────────────────────────────────────────── */
 
 function toast(msg, type = '') {
@@ -956,11 +1010,18 @@ document.getElementById('totp-add-btn').addEventListener('click', async () => {
 
 /* ── Init ──────────────────────────────────────────────────────── */
 
-// Sync device clock silently on every portal load — keeps TOTP working
-// after reboots without requiring the user to open the TOTP tab first.
-(async () => {
+async function initApp() {
   await apiPost('/api/totp/sync-time', { timestamp: String(Math.floor(Date.now() / 1000)) });
-})();
+  loadSystem();
+  loadAutostart();
+  loadPasswordStatus();
+}
 
-loadSystem();
-loadAutostart();
+(async () => {
+  const data = await api('/api/auth/status');
+  if (data.passwordSet && !data.authenticated) {
+    showLoginOverlay();
+  } else {
+    initApp();
+  }
+})();
