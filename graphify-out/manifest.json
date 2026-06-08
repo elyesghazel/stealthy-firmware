@@ -1,0 +1,387 @@
+{
+  "/home/elyes/projects/stealthy-firmware/.vscode/extensions.json": {
+    "mtime": 1780911027.3990598,
+    "ast_hash": "90f13aaa6d970e2869f11ed92ffbc61a",
+    "semantic_hash": "90f13aaa6d970e2869f11ed92ffbc61a"
+  },
+  "/home/elyes/projects/stealthy-firmware/data/web/app.js": {
+    "mtime": 1780907324.3647175,
+    "ast_hash": "904054a5b0ec1cfec44ab3940cc2bdaf",
+    "semantic_hash": "904054a5b0ec1cfec44ab3940cc2bdaf"
+  },
+  "/home/elyes/projects/stealthy-firmware/include/AppInfo.h": {
+    "mtime": 1780907324.3662574,
+    "ast_hash": "52642d836aa8f8d992464c7bb7e3a7ef",
+    "semantic_hash": "52642d836aa8f8d992464c7bb7e3a7ef"
+  },
+  "/home/elyes/projects/stealthy-firmware/include/DeviceSettings.h": {
+    "mtime": 1780907324.3671372,
+    "ast_hash": "8ace0b26627d09774e8a0463f180f557",
+    "semantic_hash": "8ace0b26627d09774e8a0463f180f557"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/apps/AboutApp.cpp": {
+    "mtime": 1780907324.3680549,
+    "ast_hash": "255e00e8852d3933a2e6181b5689dd2e",
+    "semantic_hash": "255e00e8852d3933a2e6181b5689dd2e"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/apps/AboutApp.h": {
+    "mtime": 1780907324.368279,
+    "ast_hash": "8aa68bb43a6eed69ed014837fe97aec8",
+    "semantic_hash": "8aa68bb43a6eed69ed014837fe97aec8"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/apps/BadgeApp.cpp": {
+    "mtime": 1780907324.368279,
+    "ast_hash": "225c1fda980f2839d36a23ad09c8f42e",
+    "semantic_hash": "225c1fda980f2839d36a23ad09c8f42e"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/apps/BadgeApp.h": {
+    "mtime": 1780907324.368279,
+    "ast_hash": "b215604391d8b21b495bb8a9ec22251e",
+    "semantic_hash": "b215604391d8b21b495bb8a9ec22251e"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/apps/IrToolsApp.cpp": {
+    "mtime": 1780907324.368279,
+    "ast_hash": "13a2a43d331de6bbdf4b65f2d578d9e6",
+    "semantic_hash": "13a2a43d331de6bbdf4b65f2d578d9e6"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/apps/IrToolsApp.h": {
+    "mtime": 1780907324.368279,
+    "ast_hash": "5ee5920fae475424c904a1d8c1e0370a",
+    "semantic_hash": "5ee5920fae475424c904a1d8c1e0370a"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/apps/MainMenuApp.cpp": {
+    "mtime": 1780907324.3692908,
+    "ast_hash": "6739d0748f288fe869875269ee193b3c",
+    "semantic_hash": "6739d0748f288fe869875269ee193b3c"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/apps/MainMenuApp.h": {
+    "mtime": 1780907324.3692908,
+    "ast_hash": "fb3afc2928dccf8ce26eea04569a2cb8",
+    "semantic_hash": "fb3afc2928dccf8ce26eea04569a2cb8"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/apps/PortalApp.cpp": {
+    "mtime": 1780907324.3692908,
+    "ast_hash": "7f0dd3259c3afd1b783b0e22d5b0fd6b",
+    "semantic_hash": "7f0dd3259c3afd1b783b0e22d5b0fd6b"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/apps/PortalApp.h": {
+    "mtime": 1780907324.3692908,
+    "ast_hash": "a390f07c190477d1774b1eb0332e2c67",
+    "semantic_hash": "a390f07c190477d1774b1eb0332e2c67"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/apps/SettingsApp.cpp": {
+    "mtime": 1780907324.3692908,
+    "ast_hash": "c81e622ae6671c96dc68329232b29b5d",
+    "semantic_hash": "c81e622ae6671c96dc68329232b29b5d"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/apps/SettingsApp.h": {
+    "mtime": 1780907324.3692908,
+    "ast_hash": "d1432e9977f6c5c4ece74417f9cf6300",
+    "semantic_hash": "d1432e9977f6c5c4ece74417f9cf6300"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/apps/StartScreenApp.cpp": {
+    "mtime": 1780907324.3692908,
+    "ast_hash": "c966d1652528e5e7d5ffdee078d76572",
+    "semantic_hash": "c966d1652528e5e7d5ffdee078d76572"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/apps/StartScreenApp.h": {
+    "mtime": 1780907324.3692908,
+    "ast_hash": "f49aae0eced641eaaf9da11d4c3a84ad",
+    "semantic_hash": "f49aae0eced641eaaf9da11d4c3a84ad"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/apps/TotpApp.cpp": {
+    "mtime": 1780907324.3692908,
+    "ast_hash": "0e310ae89c057d702041b77e4d8eaa39",
+    "semantic_hash": "0e310ae89c057d702041b77e4d8eaa39"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/apps/TotpApp.h": {
+    "mtime": 1780907324.3692908,
+    "ast_hash": "9d430e7aae86945da6718ed83d111186",
+    "semantic_hash": "9d430e7aae86945da6718ed83d111186"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/apps/WifiDeauthApp.cpp": {
+    "mtime": 1780907324.3692908,
+    "ast_hash": "6cc83204ee6b9c10450ebde74710c06f",
+    "semantic_hash": "6cc83204ee6b9c10450ebde74710c06f"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/apps/WifiDeauthApp.h": {
+    "mtime": 1780907324.3692908,
+    "ast_hash": "a35fbf1bdb6b3dcf5932299ecc0b2d69",
+    "semantic_hash": "a35fbf1bdb6b3dcf5932299ecc0b2d69"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/apps/WifiSpammerApp.cpp": {
+    "mtime": 1780907324.3692908,
+    "ast_hash": "8deaedeef1e123861a7740ff6ec41025",
+    "semantic_hash": "8deaedeef1e123861a7740ff6ec41025"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/apps/WifiSpammerApp.h": {
+    "mtime": 1780907324.3692908,
+    "ast_hash": "904241ec668edad65362f13bf0d54411",
+    "semantic_hash": "904241ec668edad65362f13bf0d54411"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/apps/WifiToolsApp.cpp": {
+    "mtime": 1780907324.3692908,
+    "ast_hash": "687f492519e49dbe8998e3f26bc17542",
+    "semantic_hash": "687f492519e49dbe8998e3f26bc17542"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/apps/WifiToolsApp.h": {
+    "mtime": 1780907324.3692908,
+    "ast_hash": "d1f0251d1e308f6220bec03fb093e789",
+    "semantic_hash": "d1f0251d1e308f6220bec03fb093e789"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/display/DisplayManager.cpp": {
+    "mtime": 1780907324.3726156,
+    "ast_hash": "388f7be0c1a278474169d442e8765c5a",
+    "semantic_hash": "388f7be0c1a278474169d442e8765c5a"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/display/DisplayManager.h": {
+    "mtime": 1780907324.3726156,
+    "ast_hash": "217d4cc8a8b682e32661b2e0d51c8f4f",
+    "semantic_hash": "217d4cc8a8b682e32661b2e0d51c8f4f"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/framework/AppContext.h": {
+    "mtime": 1780907324.3726156,
+    "ast_hash": "0bd741eb5b3eaadd2148f7e97fa5d491",
+    "semantic_hash": "0bd741eb5b3eaadd2148f7e97fa5d491"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/framework/AppManager.cpp": {
+    "mtime": 1780907324.3737068,
+    "ast_hash": "0fdfdd7b7426665a0be6b8c39bd59333",
+    "semantic_hash": "0fdfdd7b7426665a0be6b8c39bd59333"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/framework/AppManager.h": {
+    "mtime": 1780907324.3737068,
+    "ast_hash": "951b58187d60e2099271c3399598a96e",
+    "semantic_hash": "951b58187d60e2099271c3399598a96e"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/framework/IApp.h": {
+    "mtime": 1780907324.3737068,
+    "ast_hash": "6d9cf25930f993ec6ad2590ce1ec4a4f",
+    "semantic_hash": "6d9cf25930f993ec6ad2590ce1ec4a4f"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/input/ButtonManager.cpp": {
+    "mtime": 1780907324.3737068,
+    "ast_hash": "88665831b361d2275bce609520ff5b87",
+    "semantic_hash": "88665831b361d2275bce609520ff5b87"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/input/ButtonManager.h": {
+    "mtime": 1780907324.374397,
+    "ast_hash": "326c35fdf9bb83e5b389c65f5b9db078",
+    "semantic_hash": "326c35fdf9bb83e5b389c65f5b9db078"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/ir/FlipperIrParser.cpp": {
+    "mtime": 1780907324.374397,
+    "ast_hash": "3c246c646d0499dbca56ed6efe0ffbc8",
+    "semantic_hash": "3c246c646d0499dbca56ed6efe0ffbc8"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/ir/FlipperIrParser.h": {
+    "mtime": 1780907324.37493,
+    "ast_hash": "b69d5cc86465f4698e537667dff8438f",
+    "semantic_hash": "b69d5cc86465f4698e537667dff8438f"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/ir/FlipperIrSerializer.cpp": {
+    "mtime": 1780907324.37493,
+    "ast_hash": "bf86f3a3998f2fb064e4031d058d7d13",
+    "semantic_hash": "bf86f3a3998f2fb064e4031d058d7d13"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/ir/FlipperIrSerializer.h": {
+    "mtime": 1780907324.37493,
+    "ast_hash": "e2c8f27756f9674f154053714deadd09",
+    "semantic_hash": "e2c8f27756f9674f154053714deadd09"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/ir/IrDriver.cpp": {
+    "mtime": 1780907324.37493,
+    "ast_hash": "98b0d9e9fcc1e3ab8eaff6a0962964b5",
+    "semantic_hash": "98b0d9e9fcc1e3ab8eaff6a0962964b5"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/ir/IrDriver.h": {
+    "mtime": 1780907324.37493,
+    "ast_hash": "8ae9aaf6cbf2a794bcff9f7c353b9244",
+    "semantic_hash": "8ae9aaf6cbf2a794bcff9f7c353b9244"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/ir/IrManager.cpp": {
+    "mtime": 1780907324.37493,
+    "ast_hash": "144ebca7293c86e90c67fca3f5088b47",
+    "semantic_hash": "144ebca7293c86e90c67fca3f5088b47"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/ir/IrManager.h": {
+    "mtime": 1780907324.37493,
+    "ast_hash": "dc95700491be602fb3c02008420b1be2",
+    "semantic_hash": "dc95700491be602fb3c02008420b1be2"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/led/LedDriver.cpp": {
+    "mtime": 1780907324.37493,
+    "ast_hash": "b54cc6003fd74c244b31ad9581811c6c",
+    "semantic_hash": "b54cc6003fd74c244b31ad9581811c6c"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/led/LedDriver.h": {
+    "mtime": 1780907324.3762012,
+    "ast_hash": "eb658937fb682d583a9f6577c5c3c063",
+    "semantic_hash": "eb658937fb682d583a9f6577c5c3c063"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/led/LedManager.cpp": {
+    "mtime": 1780907324.3762012,
+    "ast_hash": "eec47bbeacb6e7696f0f9d17cb26a40f",
+    "semantic_hash": "eec47bbeacb6e7696f0f9d17cb26a40f"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/led/LedManager.h": {
+    "mtime": 1780907324.3762012,
+    "ast_hash": "9fad67793ae2a324d27897cf73cbfa39",
+    "semantic_hash": "9fad67793ae2a324d27897cf73cbfa39"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/main.cpp": {
+    "mtime": 1780907324.3762012,
+    "ast_hash": "62e7a6f55ff228497dc27a16143582ea",
+    "semantic_hash": "62e7a6f55ff228497dc27a16143582ea"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/portal/PortalManager.cpp": {
+    "mtime": 1780907324.3762012,
+    "ast_hash": "fb4d637d5b7bb4eb8f819e6a7d9b96bb",
+    "semantic_hash": "fb4d637d5b7bb4eb8f819e6a7d9b96bb"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/portal/PortalManager.h": {
+    "mtime": 1780907324.3781319,
+    "ast_hash": "7320eb78c73247d8c91e11aa514e90cd",
+    "semantic_hash": "7320eb78c73247d8c91e11aa514e90cd"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/power/PowerManager.cpp": {
+    "mtime": 1780907324.3781319,
+    "ast_hash": "a50fc7aff6fd9acb6c072eca31592e07",
+    "semantic_hash": "a50fc7aff6fd9acb6c072eca31592e07"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/power/PowerManager.h": {
+    "mtime": 1780907324.3785853,
+    "ast_hash": "48cbac101b4995d5989eff4e5a833e30",
+    "semantic_hash": "48cbac101b4995d5989eff4e5a833e30"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/storage/FileSystemDriver.cpp": {
+    "mtime": 1780907324.3785853,
+    "ast_hash": "c9ddac76fb065cf52a13de7476ce6466",
+    "semantic_hash": "c9ddac76fb065cf52a13de7476ce6466"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/storage/FileSystemDriver.h": {
+    "mtime": 1780907324.3789804,
+    "ast_hash": "6f57a89d6b5c37d77dd4d9a5793397eb",
+    "semantic_hash": "6f57a89d6b5c37d77dd4d9a5793397eb"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/storage/StorageManager.cpp": {
+    "mtime": 1780907324.3789804,
+    "ast_hash": "5d38a9a30c51043562890c27a89f58f4",
+    "semantic_hash": "5d38a9a30c51043562890c27a89f58f4"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/storage/StorageManager.h": {
+    "mtime": 1780907324.3792653,
+    "ast_hash": "e19b109ea3b26fcb3593f22a00ea7358",
+    "semantic_hash": "e19b109ea3b26fcb3593f22a00ea7358"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/totp/TotpManager.cpp": {
+    "mtime": 1780907324.3792653,
+    "ast_hash": "fc634d2367c60bbbe15c47f0b64a6dcc",
+    "semantic_hash": "fc634d2367c60bbbe15c47f0b64a6dcc"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/totp/TotpManager.h": {
+    "mtime": 1780907324.3804374,
+    "ast_hash": "7184e2775c48bffd1af5c9a12feeff32",
+    "semantic_hash": "7184e2775c48bffd1af5c9a12feeff32"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/wifi/WifiDeauth.cpp": {
+    "mtime": 1780907324.3804374,
+    "ast_hash": "ab4246c1a99d3e0c6cf4cba600fea060",
+    "semantic_hash": "ab4246c1a99d3e0c6cf4cba600fea060"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/wifi/WifiDeauth.h": {
+    "mtime": 1780907324.3809369,
+    "ast_hash": "3a797543c8a964aafb7b27ef4211c6f2",
+    "semantic_hash": "3a797543c8a964aafb7b27ef4211c6f2"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/wifi/WifiKarma.cpp": {
+    "mtime": 1780907324.3809369,
+    "ast_hash": "07fbe850175d51014b82d591519acc20",
+    "semantic_hash": "07fbe850175d51014b82d591519acc20"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/wifi/WifiKarma.h": {
+    "mtime": 1780907324.3809369,
+    "ast_hash": "df201206f2f3cebc4395a9fa403bb855",
+    "semantic_hash": "df201206f2f3cebc4395a9fa403bb855"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/wifi/WifiSpammer.cpp": {
+    "mtime": 1780907324.3809369,
+    "ast_hash": "a66ac18290ef927bd4cc95122bbb5850",
+    "semantic_hash": "a66ac18290ef927bd4cc95122bbb5850"
+  },
+  "/home/elyes/projects/stealthy-firmware/src/wifi/WifiSpammer.h": {
+    "mtime": 1780907324.3809369,
+    "ast_hash": "f13f05d5f59a794ada6ee993a6ef8cdc",
+    "semantic_hash": "f13f05d5f59a794ada6ee993a6ef8cdc"
+  },
+  "/home/elyes/projects/stealthy-firmware/CLAUDE.md": {
+    "mtime": 1780907324.359828,
+    "ast_hash": "a886ae7e65401ab31f2ef5cf828536dc",
+    "semantic_hash": "a886ae7e65401ab31f2ef5cf828536dc"
+  },
+  "/home/elyes/projects/stealthy-firmware/README.md": {
+    "mtime": 1780907324.359828,
+    "ast_hash": "d03e25339b1330ae3f580f31e252d2ff",
+    "semantic_hash": "d03e25339b1330ae3f580f31e252d2ff"
+  },
+  "/home/elyes/projects/stealthy-firmware/code.md": {
+    "mtime": 1780907324.362641,
+    "ast_hash": "1fd3db9dcd03e1fd18696a5f4a37e6b5",
+    "semantic_hash": "1fd3db9dcd03e1fd18696a5f4a37e6b5"
+  },
+  "/home/elyes/projects/stealthy-firmware/data/config/badge_mode.txt": {
+    "mtime": 1780907324.3635962,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/elyes/projects/stealthy-firmware/data/config/device_settings.txt": {
+    "mtime": 1780907324.3635962,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/elyes/projects/stealthy-firmware/data/config/name.txt": {
+    "mtime": 1780907324.3637655,
+    "ast_hash": "88f9274bae47061c85b171f62b20b44a",
+    "semantic_hash": "88f9274bae47061c85b171f62b20b44a"
+  },
+  "/home/elyes/projects/stealthy-firmware/data/config/portal_autostart.txt": {
+    "mtime": 1780907324.3637655,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/elyes/projects/stealthy-firmware/data/config/qr_data.txt": {
+    "mtime": 1780907324.3637655,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/elyes/projects/stealthy-firmware/data/config/spam_ssids.txt": {
+    "mtime": 1780907324.3637655,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/elyes/projects/stealthy-firmware/data/config/status.txt": {
+    "mtime": 1780907324.3637655,
+    "ast_hash": "053fe8adb0815c6f61dc2ab44dd7ecb5",
+    "semantic_hash": "053fe8adb0815c6f61dc2ab44dd7ecb5"
+  },
+  "/home/elyes/projects/stealthy-firmware/data/config/tagline.txt": {
+    "mtime": 1780907324.3637655,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/elyes/projects/stealthy-firmware/data/config/totp_accounts.txt": {
+    "mtime": 1780907324.3637655,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/elyes/projects/stealthy-firmware/data/payloads/demo.txt": {
+    "mtime": 1780907324.3647175,
+    "ast_hash": "6f74dcbd5177eb560313b1604a4c30c7",
+    "semantic_hash": "6f74dcbd5177eb560313b1604a4c30c7"
+  },
+  "/home/elyes/projects/stealthy-firmware/data/web/index.html": {
+    "mtime": 1780907324.3662574,
+    "ast_hash": "e07706789219a4c2dd6d43974646779d",
+    "semantic_hash": "e07706789219a4c2dd6d43974646779d"
+  }
+}
