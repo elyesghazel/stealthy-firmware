@@ -211,6 +211,12 @@ void PortalManager::setupRoutes() {
     _server.on("/api/auth/logout",       HTTP_POST, [this]() { handleApiAuthLogout();      });
     _server.on("/api/auth/set-password", HTTP_POST, [this]() { handleApiAuthSetPassword(); });
 
+    // Troll portal config
+    _server.on("/api/troll",      HTTP_GET,  [this]() { handleApiTrollGet();      });
+    _server.on("/api/troll",      HTTP_POST, [this]() { handleApiTrollPost();     });
+    _server.on("/api/troll/html", HTTP_GET,  [this]() { handleApiTrollHtmlGet();  });
+    _server.on("/api/troll/html", HTTP_POST, [this]() { handleApiTrollHtmlPost(); });
+
     _server.onNotFound([this]() {
         if (!serveFile("/web/index.html")) {
             _server.send(404, "text/plain", "Not found");
@@ -1009,6 +1015,48 @@ void PortalManager::handleApiTotpSyncTime() {
         return;
     }
     _totpManager->syncTime(ts);
+    _server.send(200, "application/json", "{\"ok\":true}");
+}
+
+// ─── Troll portal config ──────────────────────────────────────────────────────
+
+void PortalManager::handleApiTrollGet() {
+    if (!requireAuth()) return;
+    String ssid = _storageManager ? _storageManager->getTrollSsid() : "";
+    ssid.replace("\\", "\\\\"); ssid.replace("\"", "\\\"");
+    String json = "{\"ok\":true,\"ssid\":\"" + ssid + "\"}";
+    _server.send(200, "application/json", json);
+}
+
+void PortalManager::handleApiTrollPost() {
+    if (!requireAuth()) return;
+    if (!_storageManager) { _server.send(500, "application/json", "{\"ok\":false}"); return; }
+    String ssid = _server.arg("ssid");
+    ssid.trim();
+    if (ssid.length() > 32) ssid = ssid.substring(0, 32);
+    bool ok = _storageManager->setTrollSsid(ssid);
+    _server.send(200, "application/json", ok ? "{\"ok\":true}" : "{\"ok\":false}");
+}
+
+void PortalManager::handleApiTrollHtmlGet() {
+    if (!requireAuth()) return;
+    File f = LittleFS.open("/web/troll.html", "r");
+    if (f && !f.isDirectory()) {
+        _server.streamFile(f, "text/html");
+        f.close();
+    } else {
+        _server.send(404, "text/plain", "Not found");
+    }
+}
+
+void PortalManager::handleApiTrollHtmlPost() {
+    if (!requireAuth()) return;
+    String html = _server.arg("html");
+    if (html.isEmpty()) { _server.send(400, "application/json", "{\"ok\":false}"); return; }
+    File f = LittleFS.open("/web/troll.html", "w");
+    if (!f) { _server.send(500, "application/json", "{\"ok\":false}"); return; }
+    f.print(html);
+    f.close();
     _server.send(200, "application/json", "{\"ok\":true}");
 }
 

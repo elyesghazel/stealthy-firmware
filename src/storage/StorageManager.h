@@ -75,6 +75,10 @@ public:
     String getPortalPasswordHash() const;
     bool   setPortalPasswordHash(const String& sha256Hex);
 
+    // Troll captive portal SSID (empty = troll portal disabled)
+    String getTrollSsid() const;
+    bool   setTrollSsid(const String& ssid);
+
     // Badge profiles (0–2)
     static constexpr int PROFILE_COUNT = 3;
     int  getActiveProfile() const;
@@ -101,6 +105,7 @@ private:
     static constexpr const char* SPAM_SSIDS_PATH = "/config/spam_ssids.txt";
     static constexpr const char* PORTAL_AUTOSTART_PATH   = "/config/portal_autostart.txt";
     static constexpr const char* PORTAL_PASSWORD_PATH    = "/config/portal_password.txt";
+    static constexpr const char* TROLL_SSID_PATH         = "/config/troll_ssid.txt";
     static constexpr const char* DEVICE_SETTINGS_PATH    = "/config/device_settings.txt";
     static constexpr const char* ACTIVE_PROFILE_PATH     = "/config/active_profile.txt";
     static constexpr const char* PAYLOADS_DIR = "/payloads";

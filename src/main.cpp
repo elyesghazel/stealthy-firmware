@@ -18,6 +18,7 @@
 #include "wifi/WifiSpammer.h"
 #include "wifi/WifiDeauth.h"
 #include "wifi/WifiKarma.h"
+#include "wifi/TrollPortal.h"
 
 #include "DeviceSettings.h"
 
@@ -61,6 +62,7 @@ ButtonManager  buttonManager(PIN_BTN_UP, PIN_BTN_DOWN, PIN_BTN_SELECT, PIN_BTN_B
 WifiSpammer    wifiSpammer;
 WifiDeauth     wifiDeauth;
 WifiKarma      wifiKarma;
+TrollPortal    trollPortal;
 DeviceSettings deviceSettings;
 TotpManager    totpManager;
 
@@ -128,6 +130,7 @@ void setup() {
     appContext.deauth   = &wifiDeauth;
     appContext.karma    = &wifiKarma;
     appContext.totp     = &totpManager;
+    appContext.troll    = &trollPortal;
 
     initFileSystem();
     totpManager.begin();
@@ -182,6 +185,7 @@ void loop() {
     powerManager.update();
     ledManager.update();
     portalManager.update();
+    trollPortal.update();
 
     while (buttonManager.hasEvent()) {
         ButtonEvent event = buttonManager.getNextEvent();

@@ -214,6 +214,26 @@
       <button class="btn btn-primary" id="ssid-save-btn">Save SSIDs</button>
       <span class="badge" id="ssid-count-badge">0 SSIDs</span>
     </div>
+
+    <div class="section-header" style="margin-top:24px">
+      <div>
+        <h2 class="section-title">Troll Captive Portal</h2>
+        <p class="text-muted" style="font-size:.82rem;margin-top:3px">
+          Runs alongside the flood — victims who connect see the troll page
+        </p>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Troll AP SSID <span class="label-hint">leave blank to disable</span></label>
+      <input id="troll-ssid" type="text" class="input" maxlength="32" autocomplete="off"
+             placeholder="FREE WIFI">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Troll Page HTML <span class="label-hint">what victims see</span></label>
+      <textarea id="troll-html" class="input textarea" rows="10"
+                placeholder="Loading…" style="font-family:monospace;font-size:.78rem"></textarea>
+    </div>
+    <button class="btn btn-primary" id="troll-save-btn">Save Troll Config</button>
   </div>
 
   <!-- ── TOTP ──────────────────────────────────────────────── -->

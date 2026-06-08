@@ -24,14 +24,11 @@ bool WifiSpammer::begin() {
 
     esp_wifi_get_mode(&_modeBeforeStart);
 
-    if (_modeBeforeStart == WIFI_MODE_AP || _modeBeforeStart == WIFI_MODE_APSTA) {
-        // Portal is running — stay on AP interface, don't touch the channel
-        _txIface = WIFI_IF_AP;
-        if (_modeBeforeStart == WIFI_MODE_AP) WiFi.mode(WIFI_AP_STA);
+    _txIface = WIFI_IF_STA;
+    if (_modeBeforeStart == WIFI_MODE_APSTA) {
+        // TrollPortal owns the AP — inject on STA using the AP's existing channel
     } else {
-        // No portal — bring up STA and pick a fixed channel
-        _txIface = WIFI_IF_STA;
-        if (_modeBeforeStart == WIFI_MODE_NULL) WiFi.mode(WIFI_STA);
+        WiFi.mode(WIFI_STA);
         esp_wifi_set_channel(6, WIFI_SECOND_CHAN_NONE);
     }
 
@@ -54,12 +51,8 @@ void WifiSpammer::stop() {
     _running = false;
     delay(150);
     _taskHandle = nullptr;
-    // Restore the WiFi mode that was active before we started
-    // (don't kill the portal AP if it was already running)
-    if (_modeBeforeStart == WIFI_MODE_AP || _modeBeforeStart == WIFI_MODE_APSTA) {
-        if (_modeBeforeStart == WIFI_MODE_AP) WiFi.mode(WIFI_AP);
-        // else APSTA — leave as-is, nothing changed
-    } else {
+    // If TrollPortal owns AP_STA, leave WiFi alone — it will tear down its own AP
+    if (_modeBeforeStart != WIFI_MODE_APSTA) {
         WiFi.mode(WIFI_OFF);
     }
     Serial.println("[WifiSpammer] stopped");

@@ -26,7 +26,8 @@ private:
     AppManager* _appManager = nullptr;
     IApp*       _returnApp  = nullptr;
 
-    Mode _mode        = Mode::Idle;
-    bool _needsRender = true;
-    bool _fullRender  = true;
+    Mode _mode             = Mode::Idle;
+    bool _needsRender      = true;
+    bool _fullRender       = true;
+    bool _portalWasRunning = false;
 };

@@ -4,6 +4,7 @@
 #include "display/DisplayManager.h"
 #include "wifi/WifiSpammer.h"
 #include "portal/PortalManager.h"
+#include "wifi/TrollPortal.h"
 #include "storage/StorageManager.h"
 #include "led/LedManager.h"
 
@@ -25,8 +26,8 @@ void WifiSpammerApp::setup(AppManager* appManager, IApp* returnApp) {
 void WifiSpammerApp::onEnter() {
     auto* ctx = _appManager ? _appManager->context() : nullptr;
 
-    // Portal stays running — spammer uses STA interface, portal uses AP
-    // Load SSIDs from storage into the spammer
+    _portalWasRunning = false;
+
     if (ctx && ctx->storage && ctx->spammer) {
         auto ssids = ctx->storage->loadSpamSSIDs();
         ctx->spammer->setSSIDs(ssids);
@@ -43,6 +44,9 @@ void WifiSpammerApp::onExit() {
     auto* ctx = _appManager ? _appManager->context() : nullptr;
     if (ctx && ctx->spammer && ctx->spammer->isRunning()) {
         ctx->spammer->stop();
+        if (ctx->troll) ctx->troll->stop();
+        if (_portalWasRunning && ctx->portal) ctx->portal->begin();
+        _portalWasRunning = false;
     }
     if (ctx && ctx->leds) {
         ctx->leds->setIdle();
@@ -64,14 +68,38 @@ void WifiSpammerApp::handleButton(const ButtonEvent& event) {
         if (_mode == Mode::NoSSIDs) return;
 
         if (_mode == Mode::Idle) {
+            // Stop main portal to free WiFi
+            if (ctx && ctx->portal && ctx->portal->isRunning()) {
+                ctx->portal->stop();
+                _portalWasRunning = true;
+            }
+            // Start troll captive portal — karma matches any flood SSID
+            if (ctx && ctx->troll && ctx->storage) {
+                auto ssids = ctx->storage->loadSpamSSIDs();
+                ctx->troll->setSSIDs(ssids);
+                // Initial AP SSID: explicit troll SSID, or first flood SSID
+                String trollSsid = ctx->storage->getTrollSsid();
+                if (trollSsid.isEmpty() && !ssids.empty()) trollSsid = ssids[0];
+                if (!trollSsid.isEmpty()) {
+                    ctx->troll->begin(trollSsid);
+                }
+            }
+            // Start spammer — detects AP_STA from troll portal, injects on STA
             if (ctx && ctx->spammer && ctx->spammer->begin()) {
                 _mode = Mode::Running;
                 if (ctx->leds) ctx->leds->showIrTransmit();
                 requestPartialRender();
+            } else {
+                if (ctx && ctx->troll) ctx->troll->stop();
+                if (_portalWasRunning && ctx && ctx->portal) ctx->portal->begin();
+                _portalWasRunning = false;
             }
         } else if (_mode == Mode::Running) {
             if (ctx && ctx->spammer) ctx->spammer->stop();
-            if (ctx && ctx->leds)   ctx->leds->setIdle();
+            if (ctx && ctx->troll)   ctx->troll->stop();
+            if (ctx && ctx->leds)    ctx->leds->setIdle();
+            if (_portalWasRunning && ctx && ctx->portal) ctx->portal->begin();
+            _portalWasRunning = false;
             _mode = Mode::Idle;
             requestPartialRender();
         }
@@ -121,8 +149,8 @@ void WifiSpammerApp::drawContent(DisplayManager& display) {
         display.drawText(TEXT_X, L4_Y, "Back   = exit");
     } else {
         display.drawText(TEXT_X, L2_Y, "Status: FLOODING");
-        display.drawText(TEXT_X, L3_Y, "Select = stop");
-        display.drawText(TEXT_X, L4_Y, "Back   = stop+exit");
+        display.drawText(TEXT_X, L3_Y, _portalWasRunning ? "Portal paused" : "Select = stop");
+        display.drawText(TEXT_X, L4_Y, "Select=stop  Back=exit");
     }
 }
 

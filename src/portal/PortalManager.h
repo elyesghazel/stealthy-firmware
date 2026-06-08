@@ -75,6 +75,11 @@ private:
     void handleApiAuthLogout();
     void handleApiAuthSetPassword();
 
+    void handleApiTrollGet();
+    void handleApiTrollPost();
+    void handleApiTrollHtmlGet();
+    void handleApiTrollHtmlPost();
+
     bool   isAuthenticated();
     bool   requireAuth();
     static String sha256Hex(const String& input);

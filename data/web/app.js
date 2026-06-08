@@ -630,7 +630,37 @@ async function loadFlood() {
   if (!data.ok || !data.ssids) return;
   document.getElementById('ssid-textarea').value = data.ssids.join('\n');
   document.getElementById('ssid-count-badge').textContent = data.ssids.length + ' SSIDs';
+
+  // Load troll portal config
+  const troll = await api('/api/troll');
+  if (troll.ok) document.getElementById('troll-ssid').value = troll.ssid || '';
+
+  const htmlResp = await fetch('/api/troll/html');
+  if (htmlResp.ok) {
+    const html = await htmlResp.text();
+    document.getElementById('troll-html').value = html;
+  }
 }
+
+document.getElementById('troll-save-btn').addEventListener('click', async () => {
+  const btn  = document.getElementById('troll-save-btn');
+  setBtn(btn, 'Saving…', true);
+
+  const ssid = document.getElementById('troll-ssid').value.trim();
+  const html = document.getElementById('troll-html').value;
+
+  const [r1, r2] = await Promise.all([
+    apiPost('/api/troll', { ssid }),
+    apiPost('/api/troll/html', { html }),
+  ]);
+
+  setBtn(btn, 'Save Troll Config', false);
+  if (r1.ok && r2.ok) {
+    toast(ssid ? 'Troll config saved.' : 'Troll portal disabled.', 'ok');
+  } else {
+    toast('Save failed.', 'err');
+  }
+});
 
 document.getElementById('ssid-save-btn').addEventListener('click', async () => {
   const btn   = document.getElementById('ssid-save-btn');

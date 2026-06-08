@@ -625,6 +625,18 @@ bool StorageManager::setPortalPasswordHash(const String& sha256Hex) {
     return _fileSystemDriver->writeTextFile(PORTAL_PASSWORD_PATH, sha256Hex);
 }
 
+String StorageManager::getTrollSsid() const {
+    if (!_available) return "";
+    String v = _fileSystemDriver->readTextFile(TROLL_SSID_PATH);
+    v.trim();
+    return v;
+}
+
+bool StorageManager::setTrollSsid(const String& ssid) {
+    if (!_available) return false;
+    return _fileSystemDriver->writeTextFile(TROLL_SSID_PATH, ssid);
+}
+
 String StorageManager::exportIrCaptureAsFlipperFormat(int id) const {
     if (!_available) return "";
     String fileId = makeFileId(id);
