@@ -28,7 +28,7 @@ public:
     void render(DisplayManager& display) override;
 
 private:
-    static const int ITEM_COUNT = 5;
+    static const int ITEM_COUNT = 6;
     static constexpr int VISIBLE_ITEMS = 4;
 
     int _scrollOffset = 0;
@@ -50,8 +50,11 @@ private:
         "Refresh Every",
         "Badge Status",
         "Start Screen",
+        "Portal Start",
         "Back"
     };
+
+    bool _portalAutostart = false;
 
     void moveUp();
     void moveDown();

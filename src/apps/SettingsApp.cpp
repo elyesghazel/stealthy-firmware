@@ -56,6 +56,13 @@ void SettingsApp::onEnter() {
     _scrollOffset = 0;
     _partialUpdateCount = 0;
     _mode = SettingsMode::Browse;
+
+    // Sync portal autostart from storage so the display shows the current value
+    if (_appManager) {
+        auto* storage = _appManager->context()->storage;
+        if (storage) _portalAutostart = storage->getPortalAutostart();
+    }
+
     requestFullRender();
 }
 
@@ -100,7 +107,10 @@ void SettingsApp::applyAndSave() {
     auto* storage = _appManager->context()->storage;
     auto* power   = _appManager->context()->power;
 
-    if (storage) storage->saveDeviceSettings(*_settings);
+    if (storage) {
+        storage->saveDeviceSettings(*_settings);
+        storage->setPortalAutostart(_portalAutostart);
+    }
 
     if (power) {
         static const unsigned long timeouts[] = {10000, 30000, 60000, 180000, 300000, 600000};
@@ -278,6 +288,9 @@ void SettingsApp::moveUp() {
         case 3:
             _settings->showStartScreen = !_settings->showStartScreen; changed = true;
             break;
+        case 4:
+            _portalAutostart = !_portalAutostart; changed = true;
+            break;
         default: break;
     }
     if (changed) { applyAndSave(); requestPartialRender(); }
@@ -323,6 +336,9 @@ void SettingsApp::moveDown() {
             break;
         case 3:
             _settings->showStartScreen = !_settings->showStartScreen; changed = true;
+            break;
+        case 4:
+            _portalAutostart = !_portalAutostart; changed = true;
             break;
         default: break;
     }
@@ -385,6 +401,9 @@ const char* SettingsApp::currentValueText(int index) const {
 
         case 3:
             return _settings->showStartScreen ? "On" : "Off";
+
+        case 4:
+            return _portalAutostart ? "On" : "Off";
 
         default:
             return "";
