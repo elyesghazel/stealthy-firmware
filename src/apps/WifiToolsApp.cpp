@@ -13,11 +13,12 @@ namespace {
 }
 
 void WifiToolsApp::setup(AppManager* appManager, IApp* returnApp,
-                          IApp* spammerApp, IApp* deauthApp) {
-    _appManager = appManager;
-    _returnApp  = returnApp;
-    _spammerApp = spammerApp;
-    _deauthApp  = deauthApp;
+                          IApp* spammerApp, IApp* deauthApp, IApp* appleJuiceApp) {
+    _appManager    = appManager;
+    _returnApp     = returnApp;
+    _spammerApp    = spammerApp;
+    _deauthApp     = deauthApp;
+    _appleJuiceApp = appleJuiceApp;
 }
 
 void WifiToolsApp::onEnter() {
@@ -62,8 +63,9 @@ void WifiToolsApp::handleButton(const ButtonEvent& event) {
 
         case ButtonId::Select:
             if (event.action != ButtonAction::Press || !_appManager) break;
-            if (_selectedIndex == 0 && _spammerApp) _appManager->switchTo(_spammerApp);
-            if (_selectedIndex == 1 && _deauthApp)  _appManager->switchTo(_deauthApp);
+            if (_selectedIndex == 0 && _spammerApp)    _appManager->switchTo(_spammerApp);
+            if (_selectedIndex == 1 && _deauthApp)     _appManager->switchTo(_deauthApp);
+            if (_selectedIndex == 2 && _appleJuiceApp) _appManager->switchTo(_appleJuiceApp);
             break;
     }
 }

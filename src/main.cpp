@@ -19,6 +19,7 @@
 #include "wifi/WifiDeauth.h"
 #include "wifi/WifiKarma.h"
 #include "wifi/TrollPortal.h"
+#include "wifi/AppleJuice.h"
 
 #include "DeviceSettings.h"
 
@@ -32,6 +33,7 @@
 #include "apps/WifiToolsApp.h"
 #include "apps/WifiSpammerApp.h"
 #include "apps/WifiDeauthApp.h"
+#include "apps/AppleJuiceApp.h"
 #include "apps/TotpApp.h"
 #include "totp/TotpManager.h"
 
@@ -63,6 +65,7 @@ WifiSpammer    wifiSpammer;
 WifiDeauth     wifiDeauth;
 WifiKarma      wifiKarma;
 TrollPortal    trollPortal;
+AppleJuice     appleJuice;
 DeviceSettings deviceSettings;
 TotpManager    totpManager;
 
@@ -80,6 +83,7 @@ PortalApp      portalApp;
 WifiToolsApp   wifiToolsApp;
 WifiSpammerApp wifiSpammerApp;
 WifiDeauthApp  wifiDeauthApp;
+AppleJuiceApp  appleJuiceApp;
 
 void initFileSystem() {
     if (!storageManager.begin()) {
@@ -130,7 +134,8 @@ void setup() {
     appContext.deauth   = &wifiDeauth;
     appContext.karma    = &wifiKarma;
     appContext.totp     = &totpManager;
-    appContext.troll    = &trollPortal;
+    appContext.troll      = &trollPortal;
+    appContext.appleJuice = &appleJuice;
 
     initFileSystem();
     totpManager.begin();
@@ -155,9 +160,10 @@ void setup() {
     settingsApp.setup(&appManager, &mainMenuApp, &deviceSettings);
     irToolsApp.setup(&appManager, &mainMenuApp);
     portalApp.setup(&appManager, &mainMenuApp);
-    wifiToolsApp.setup(&appManager, &mainMenuApp, &wifiSpammerApp, &wifiDeauthApp);
+    wifiToolsApp.setup(&appManager, &mainMenuApp, &wifiSpammerApp, &wifiDeauthApp, &appleJuiceApp);
     wifiSpammerApp.setup(&appManager, &wifiToolsApp);
     wifiDeauthApp.setup(&appManager, &wifiToolsApp);
+    appleJuiceApp.setup(&appManager, &wifiToolsApp);
     totpApp.setup(&appManager, &mainMenuApp);
 
     mainMenuApp.setup(

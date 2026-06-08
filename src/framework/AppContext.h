@@ -12,6 +12,7 @@ class WifiDeauth;
 class WifiKarma;
 class TotpManager;
 class TrollPortal;
+class AppleJuice;
 
 struct AppContext {
     DisplayManager* display  = nullptr;
@@ -25,5 +26,6 @@ struct AppContext {
     WifiDeauth*     deauth   = nullptr;
     WifiKarma*      karma    = nullptr;
     TotpManager*    totp     = nullptr;
-    TrollPortal*    troll    = nullptr;
+    TrollPortal*    troll      = nullptr;
+    AppleJuice*     appleJuice = nullptr;
 };
