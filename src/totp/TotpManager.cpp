@@ -40,13 +40,14 @@ bool TotpManager::begin() {
 
     // Restore last known unix time from flash so TOTP works after a quick reboot
     // without needing a portal sync. Error = time the device was powered off.
-    if (LittleFS.exists(TIME_PATH)) {
+    // Touch with "a" first so the "r" open below never hits a missing-file error.
+    { File touch = LittleFS.open(TIME_PATH, "a"); if (touch) touch.close(); }
+    {
         File tf = LittleFS.open(TIME_PATH, "r");
         if (tf) {
             unsigned long saved = (unsigned long)tf.readStringUntil('\n').toInt();
             tf.close();
             if (saved > 1000000000UL) {
-                // Set offset as if current time = saved (millis() ≈ 0 here)
                 _timeOffset    = saved - (unsigned long)(millis() / 1000UL);
                 _timeSynced    = true;
                 _timeFromFlash = true;

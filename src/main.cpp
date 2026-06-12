@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <cstdint>
 #include <driver/rtc_io.h>
 #include <esp_system.h>
 

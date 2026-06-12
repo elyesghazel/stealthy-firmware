@@ -24,35 +24,35 @@ bool StorageManager::begin() {
     _fileSystemDriver->ensureDir("/ir/uploads");
     _fileSystemDriver->ensureDir("/ir/db");
 
-    // Create default config files so LittleFS never errors on a missing read
-    auto ensureFile = [this](const char* path, const char* def) {
-        if (!_fileSystemDriver->exists(path))
-            _fileSystemDriver->writeTextFile(path, def);
+    // Create default config files — ensureTextFile uses "a" mode internally,
+    // which avoids the VFS "does not exist, no permits for creation" error that
+    // LittleFS.exists() (open "r") would trigger for missing files on first boot.
+    auto ef = [this](const char* path, const char* def) {
+        _fileSystemDriver->ensureTextFile(path, def);
     };
-    ensureFile(NAME_PATH,    "Stealthy\n");
-    ensureFile(STATUS_PATH,  "Online\n");
-    ensureFile(TAGLINE_PATH, "\n");
-    ensureFile(QR_DATA_PATH, "\n");
-    ensureFile(BADGE_MODE_PATH,        "0\n");
-    ensureFile(SPAM_SSIDS_PATH,        "");
-    ensureFile(PORTAL_AUTOSTART_PATH,  "0");
-    ensureFile(DEVICE_SETTINGS_PATH,
-        "sleepTimeoutIndex=1\n"
+    ef(NAME_PATH,    "Stealthy\n");
+    ef(STATUS_PATH,  "Online\n");
+    ef(TAGLINE_PATH, "\n");
+    ef(QR_DATA_PATH, "\n");
+    ef(BADGE_MODE_PATH,        "0\n");
+    ef(SPAM_SSIDS_PATH,        "");
+    ef(PORTAL_AUTOSTART_PATH,  "0");
+    ef(DEVICE_SETTINGS_PATH,
+        "sleepTimeoutIndex=4\n"
         "refreshIndex=1\n"
         "badgeStatusIndex=0\n"
         "showStartScreen=1\n"
     );
-    ensureFile(ACTIVE_PROFILE_PATH, "0\n");
-    // Default profile names
-    ensureFile("/config/profile0_name.txt",    "Stealthy\n");
-    ensureFile("/config/profile0_tagline.txt", "\n");
-    ensureFile("/config/profile0_qr.txt",      "\n");
-    ensureFile("/config/profile1_name.txt",    "Profile 2\n");
-    ensureFile("/config/profile1_tagline.txt", "\n");
-    ensureFile("/config/profile1_qr.txt",      "\n");
-    ensureFile("/config/profile2_name.txt",    "Profile 3\n");
-    ensureFile("/config/profile2_tagline.txt", "\n");
-    ensureFile("/config/profile2_qr.txt",      "\n");
+    ef(ACTIVE_PROFILE_PATH, "0\n");
+    ef("/config/profile0_name.txt",    "Stealthy\n");
+    ef("/config/profile0_tagline.txt", "\n");
+    ef("/config/profile0_qr.txt",      "\n");
+    ef("/config/profile1_name.txt",    "Profile 2\n");
+    ef("/config/profile1_tagline.txt", "\n");
+    ef("/config/profile1_qr.txt",      "\n");
+    ef("/config/profile2_name.txt",    "Profile 3\n");
+    ef("/config/profile2_tagline.txt", "\n");
+    ef("/config/profile2_qr.txt",      "\n");
 
     return true;
 }
@@ -529,7 +529,7 @@ bool StorageManager::loadDeviceSettings(DeviceSettings& out) const {
         String key = line.substring(0, eq);
         String val = line.substring(eq + 1);
         key.trim(); val.trim();
-        if (key == "sleepTimeoutIndex")    out.sleepTimeoutIndex    = constrain(val.toInt(), 0, 3);
+        if (key == "sleepTimeoutIndex")    out.sleepTimeoutIndex    = constrain(val.toInt(), 0, 5);
         else if (key == "refreshIndex")    out.refreshIntervalIndex = constrain(val.toInt(), 0, 2);
         else if (key == "badgeStatusIndex")out.badgeStatusIndex     = constrain(val.toInt(), 0, 3);
         else if (key == "showStartScreen") out.showStartScreen      = (val == "1");

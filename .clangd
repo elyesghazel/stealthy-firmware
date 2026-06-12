@@ -1,0 +1,10 @@
+CompileFlags:
+  Add:
+    - "-ferror-limit=0"
+  Remove:
+    - "-mlongcalls"
+    - "-mtext-section-literals"
+    - "-mfix-esp32-psram-cache-issue"
+    - "-fstrict-volatile-bitfields"
+    - "-mdisable-hardware-atomics"
+    - "-fno-tree-switch-conversion"

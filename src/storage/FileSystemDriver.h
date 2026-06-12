@@ -17,6 +17,7 @@ public:
     bool exists(const char* path) const;
     String readTextFile(const char* path) const;
     bool writeTextFile(const char* path, const String& content);
+    bool ensureTextFile(const char* path, const String& defaultContent);
     std::vector<String> listFiles(const char* path) const;
     std::vector<FileEntry> listEntries(const char* path) const;
     bool removeFile(const char* path);

@@ -35,6 +35,17 @@ String FileSystemDriver::readTextFile(const char* path) const {
     return content;
 }
 
+bool FileSystemDriver::ensureTextFile(const char* path, const String& defaultContent) {
+    if (!_mounted) return false;
+    // "a" (append) creates the file if it doesn't exist without triggering the
+    // VFS "does not exist, no permits for creation" error that "r" would cause.
+    File f = LittleFS.open(path, "a");
+    if (!f) return false;
+    if (f.size() == 0) f.print(defaultContent);
+    f.close();
+    return true;
+}
+
 bool FileSystemDriver::writeTextFile(const char* path, const String& content) {
     if (!_mounted) return false;
 
