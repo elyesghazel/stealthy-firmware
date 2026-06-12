@@ -44,6 +44,9 @@ private:
     int        _probeCount = 0;
     mutable portMUX_TYPE _mux;
 
+    // add debug
+    void _debugPrintProbes() const;
+
     bool   _sniffing     = false;
     bool   _karmaRunning = false;
     String _karmaSsid;
