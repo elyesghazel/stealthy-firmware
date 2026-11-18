@@ -1,0 +1,60 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to publish (e.g. v0.2.0)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            ~/.cache/pip
+            .pio
+          key: pio-${{ runner.os }}-${{ hashFiles('platformio.ini') }}
+          restore-keys: pio-${{ runner.os }}-
+
+      - name: Install PlatformIO
+        run: pip install --upgrade platformio
+
+      - name: Build firmware
+        run: pio run
+
+      - name: Build LittleFS image
+        run: pio run --target buildfs
+
+      - name: Collect artifacts
+        run: |
+          mkdir -p dist
+          ENV=$(pio project config --json-output | python -c "import sys,json; print(next(s[0] for s in json.load(sys.stdin) if s[0].startswith('env:'))[4:])")
+          echo "Using env: $ENV"
+          cp ".pio/build/$ENV/firmware.bin"  "dist/stealthy-firmware-${TAG}.bin"
+          cp ".pio/build/$ENV/littlefs.bin"  "dist/stealthy-littlefs-${TAG}.bin"
+          ls -lh dist/
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          generate_release_notes: true
+          files: dist/*
