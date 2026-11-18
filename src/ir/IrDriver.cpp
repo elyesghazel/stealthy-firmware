@@ -1,22 +1,22 @@
 #include "IrDriver.h"
 
+#include "Pins.h"
+
 IrDriver::IrDriver()
-    : _irrecv(IR_RX_PIN, RECV_BUFFER_SIZE, RECV_TIMEOUT_MS, SAVE_BUFFER),
-      _irsend(IR_TX_PIN) {
+    : _irrecv(Pins::IR_RX, RECV_BUFFER_SIZE, RECV_TIMEOUT_MS, SAVE_BUFFER),
+      _irsend(Pins::IR_TX) {
 }
 
 bool IrDriver::begin() {
     _irsend.begin();
     _irrecv.enableIRIn();
-    pinMode(IR_STATUS_LED_PIN, OUTPUT);
-    digitalWrite(IR_STATUS_LED_PIN, LOW);
+    pinMode(Pins::IR_STATUS_LED, OUTPUT);
+    digitalWrite(Pins::IR_STATUS_LED, LOW);
     _started = true;
 
-    
-
     Serial.println("[IR] driver initialized");
-    Serial.printf("[IR] TX pin: %u\n", IR_TX_PIN);
-    Serial.printf("[IR] RX pin: %u\n", IR_RX_PIN);
+    Serial.printf("[IR] TX pin: %u\n", Pins::IR_TX);
+    Serial.printf("[IR] RX pin: %u\n", Pins::IR_RX);
 
     return true;
 }
