@@ -1,5 +1,6 @@
 #pragma once
 #include <Arduino.h>
+#include <esp_wifi_types.h>
 #include <vector>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
