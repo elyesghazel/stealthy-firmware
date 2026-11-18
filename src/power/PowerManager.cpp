@@ -2,9 +2,8 @@
 #include <esp_sleep.h>
 #include <driver/rtc_io.h>
 
+#include "Pins.h"
 
-static const int BATTERY_ADC_PIN = 9;
-static const gpio_num_t WAKE_BTN = GPIO_NUM_12;
 static constexpr float ADC_REF_VOLTAGE = 3.3f;
 static constexpr float VOLTAGE_DIVIDER_RATIO = 2.0f;
 static constexpr float CALIBRATION_FACTOR = 1.08f; // tweak with multimeter later
@@ -15,7 +14,7 @@ void PowerManager::begin(unsigned long sleepTimeoutMs) {
     _shouldSleep = false;
 
     analogReadResolution(12);
-    analogSetPinAttenuation(BATTERY_ADC_PIN, ADC_11db);
+    analogSetPinAttenuation(Pins::BATTERY_ADC, ADC_11db);
 }
 
 void PowerManager::setSleepTimeout(unsigned long ms) {
@@ -55,7 +54,7 @@ float PowerManager::readBatteryVoltage() const {
     uint16_t readings[samples];
 
     for (int i = 0; i < samples; i++) {
-        readings[i] = analogRead(BATTERY_ADC_PIN);
+        readings[i] = analogRead(Pins::BATTERY_ADC);
         delay(2);
     }
 
@@ -114,19 +113,19 @@ int PowerManager::batteryPercent() const {
 void PowerManager::enterDeepSleep() {
     Serial.println("[Power] preparing deep sleep");
 
-    pinMode((int)WAKE_BTN, INPUT_PULLUP);
-    Serial.printf("GPIO12 before sleep = %d\n", digitalRead((int)WAKE_BTN));
+    pinMode((int)Pins::WAKE, INPUT_PULLUP);
+    Serial.printf("GPIO12 before sleep = %d\n", digitalRead((int)Pins::WAKE));
 
     // Configure GPIO12 as RTC IO with pull-up held during sleep
-    rtc_gpio_init(WAKE_BTN);
-    rtc_gpio_set_direction(WAKE_BTN, RTC_GPIO_MODE_INPUT_ONLY);
-    rtc_gpio_pullup_en(WAKE_BTN);
-    rtc_gpio_pulldown_dis(WAKE_BTN);
+    rtc_gpio_init(Pins::WAKE);
+    rtc_gpio_set_direction(Pins::WAKE, RTC_GPIO_MODE_INPUT_ONLY);
+    rtc_gpio_pullup_en(Pins::WAKE);
+    rtc_gpio_pulldown_dis(Pins::WAKE);
 
     // Keep RTC peripheral domain on so the RTC pull-up stays active
     esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
 
-    esp_sleep_enable_ext1_wakeup(1ULL << WAKE_BTN, ESP_EXT1_WAKEUP_ANY_LOW);
+    esp_sleep_enable_ext1_wakeup(1ULL << Pins::WAKE, ESP_EXT1_WAKEUP_ANY_LOW);
 
     delay(100);
     Serial.println("[Power] entering deep sleep");

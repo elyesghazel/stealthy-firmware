@@ -30,11 +30,6 @@ public:
     static String protocolToString(decode_type_t protocol);
 
 private:
-    static constexpr uint16_t IR_TX_PIN = 14;
-    static constexpr uint16_t IR_RX_PIN = 21;
-
-    static constexpr uint16_t IR_STATUS_LED_PIN = 2;
-
     // Buffer size and timeout are common knobs for receive stability.
     static constexpr uint16_t RECV_BUFFER_SIZE = 1024;
     static constexpr uint8_t RECV_TIMEOUT_MS = 50;
