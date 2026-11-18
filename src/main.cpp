@@ -38,13 +38,7 @@
 #include "apps/TotpApp.h"
 #include "totp/TotpManager.h"
 
-// Pins
-static const int PIN_BTN_UP     = 10;
-static const int PIN_BTN_DOWN   = 11;
-static const int PIN_BTN_SELECT = 12;
-static const int PIN_BTN_BACK   = 13;
-static const int LED_BLUE       = 2;
-static const int LED_GREEN      = 1;
+#include "Pins.h"
 
 static uint32_t _autoStartPortalAt   = 0;
 static uint32_t _lastBatteryCheckMs  = 0;
@@ -53,7 +47,7 @@ static uint32_t _lastBatteryCheckMs  = 0;
 AppContext     appContext;
 FileSystemDriver fileSystemDriver;
 IrDriver       irDriver;
-LedDriver      ledDriver(LED_BLUE, LED_GREEN);
+LedDriver      ledDriver(Pins::LED_BLUE, Pins::LED_GREEN);
 
 StorageManager storageManager(&fileSystemDriver);
 DisplayManager displayManager;
@@ -61,7 +55,7 @@ PowerManager   powerManager;
 AppManager     appManager;
 IrManager      irManager(&irDriver);
 LedManager     ledManager(&ledDriver);
-ButtonManager  buttonManager(PIN_BTN_UP, PIN_BTN_DOWN, PIN_BTN_SELECT, PIN_BTN_BACK);
+ButtonManager  buttonManager(Pins::BTN_UP, Pins::BTN_DOWN, Pins::BTN_SELECT, Pins::BTN_BACK);
 WifiSpammer    wifiSpammer;
 WifiDeauth     wifiDeauth;
 WifiKarma      wifiKarma;
@@ -118,7 +112,7 @@ void setup() {
     displayManager.attachPowerManager(&powerManager);
 
     Serial.printf("Wake cause: %d\n", wakeCause);
-    rtc_gpio_deinit(GPIO_NUM_12);
+    rtc_gpio_deinit(Pins::WAKE);
     buttonManager.begin();
 
     if (!irManager.begin()) Serial.println("[IR] init failed");
