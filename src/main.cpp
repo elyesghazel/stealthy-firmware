@@ -39,6 +39,7 @@
 #include "totp/TotpManager.h"
 
 #include "Pins.h"
+#include "recovery/RecoveryBoot.h"
 
 static uint32_t _autoStartPortalAt   = 0;
 static uint32_t _lastBatteryCheckMs  = 0;
@@ -114,6 +115,9 @@ void setup() {
     Serial.printf("Wake cause: %d\n", wakeCause);
     rtc_gpio_deinit(Pins::WAKE);
     buttonManager.begin();
+
+    // Hold Up+Back at boot to wipe /config. No-op if the combo isn't held.
+    RecoveryBoot::check(displayManager);
 
     if (!irManager.begin()) Serial.println("[IR] init failed");
     else                    Serial.println("[IR] ready");
